@@ -1,0 +1,75 @@
+﻿0,General,TRUE
+0.1,Make,FALSE
+0.2,Vehicle model and its variant(s),FALSE
+0.3,Means of type identification if stated on vehicle,FALSE
+0.4,Location of that means of identification,FALSE
+0.5,Vehicle category (IS 14272),FALSE
+0.6,Name and address of manufacturer with contact persons name designation e-mail phone nos. etc. Provide details of importer if applicable.,FALSE
+0.7,Name(s) and address (es) of assembly plants,FALSE
+0.8,Name and address of the vehicle importer ,FALSE
+0.9,Name and address of manufacturer's authorized representative. if any,FALSE
+0.10,Method of inscription of VIN on the chassis,FALSE
+0.11,The serial numbering (of production vehicles) of the type begins with No,FALSE
+0.12,Position and method of affixing the component type-approval mark for components and separate technical units,FALSE
+1,General arrangement of the vehicle,TRUE
+1.1,Photos and/or drawings of a typical vehicle,FALSE
+1.2,Drawing of the complete vehicle indicating overall length width track and height.,FALSE
+1.3,Wheelbase,FALSE
+1.4,Number of axles and wheels (where appropriate. number of crawler tracks or belts):,FALSE
+1.5,Position and arrangement of engine,FALSE
+1.6,Number of seating positions,FALSE
+1.7,Type of Fuel,FALSE
+1.8,Weights (in kg),TRUE
+1.9,Vehicle kerb weight(9),FALSE
+1.10,Distribution of that weight between the axles,FALSE
+1.11, Reference weight,FALSE
+1.12,Gross Vehicle Weight,FALSE
+1.13,Division of that weight  between the axles,FALSE
+1.14,Maximum technically permissible  weight  (maximum permissible axle weight) on each of the axles,FALSE
+1.15,Front Axle,FALSE
+1.16,Rear Axle,FALSE
+1.17,Maximum hill-starting ability (Gradeability) at the maximum technically permissible mass declared by the manufacturer,FALSE
+2,Type (state any possible variants and versions: each variant and each version must be identified by a code consisting of numbers or a combination of letters and numbers),TRUE
+2.1,Commercial name (s),FALSE
+3,Transmission(8) ,TRUE
+3.1.,Diagram of transmission system,FALSE
+3.2.,Type (mechanical hydraulic electrical etc.) (1),FALSE
+3.3.,Clutch (type),FALSE
+3.4.,Gearbox,FALSE
+3.4.1.,Type: automatic/manual(1),FALSE
+3.4.2.,Method of selection: by hand/foot(1),FALSE
+3.4.2.1,Gear shifting pattern,FALSE
+3.4.3.,Gear ratios,FALSE
+3.4.3.1,Primary ratio ,FALSE
+3.4.3.2,Secondary ratio,FALSE
+3.4.3.3,Individual and Overall ratios,FALSE
+3.4.3.3.1,First gear,FALSE
+3.4.3.3.2,Second gear,FALSE
+3.4.3.3.3,Third gear,FALSE
+3.4.3.3.4,Fourth gear,FALSE
+3.4.3.3.5,Fifth gear,FALSE
+3.4.3.3.6,Sixth gear,FALSE
+3.4.3.4,Minimum continuously Variable transmission,FALSE
+3.4.3.5,Maximum continuously Variable transmission,FALSE
+3.4.3.6,Reverse Gear,FALSE
+3.5.,Brief description of the ECUs used in the transmission,FALSE
+3.6.,Maximum speed of vehicle and gear in which it is reached (in km/h)(9),FALSE
+3.7.,Speedometer,FALSE
+3.7.1,Make(s),FALSE
+3.7.2.,Type(s),FALSE
+3.7.3.,Photographs and/or drawings of the complete system,FALSE
+3.7.4.,Speed range displayed,FALSE
+3.7.4.1.,Major Marking (Applicable only for Analog Type),FALSE
+3.7.4.2.,Minor Marking (Applicable only for Analog Type),FALSE
+3.7.5.,Tolerance of the measuring mechanism of the speedometer,FALSE
+3.7.6.,Technical constant of the speedometer (speedometer ratio),FALSE
+3.7.7.,Method of operation and description of the drive mechanism,FALSE
+3.7.8.,Overall transmission ratio of the drive mechanism or pulse / wheel revolution (in case of digital speedometer),FALSE
+4,Suspension,TRUE
+4.1,Drawing of suspension arrangement,FALSE
+4.1.1.,Brief description of the ECUs used in the suspension,FALSE
+4.1.2,Springs front and rear,FALSE
+4.1.3,Anti-roll bar,FALSE
+4.1.4,Shock Absorbers front and rear,FALSE
+4.2.,Tyres (standard type): (Enclose annexure if required),FALSE
+

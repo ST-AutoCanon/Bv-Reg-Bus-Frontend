@@ -1,0 +1,14 @@
+version: "3"
+services:
+  react-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: react-app
+    image: registry.digitalocean.com/auto-canon/auto-canon-fe:latest
+    ports:
+     - "3000:3000"
+    environment:
+      NODE_ENV: production
+      # REACT_APP_BASE_URL: http://64.227.168.164/api/
+      REACT_APP_BASE_URL: http://bv-reg.com/api/

@@ -1,0 +1,109 @@
+.home-page .banner-text h2{
+    font-style: normal;
+    font-weight: 700;
+    font-size: 48px;
+    letter-spacing: -0.72px;
+    margin-bottom: 20px;
+}
+.home-page .banner-text h2 a{
+    text-decoration: none;
+}
+.home-page .banner-text p{
+    color: rgba(0, 0, 0, 0.80);
+    font-family: 'Montserrat';
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 24px;
+    letter-spacing: -0.24px;
+    padding-top: 10px;
+}
+.home-page .banner-text p a{
+    text-decoration: none;
+}
+.home-page .banner-text  button,.middle-content button {
+    border-radius: 5px;
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 24px;
+    border: 1px solid #7FBF28;
+}
+.banner-slider .slick-dots li button:before{
+    color: #6D6D6D;
+    font-size: 16px;
+}
+
+.banner-slider .slick-dots li.slick-active button:before {
+    color: #0A6279;
+    font-size: 16px;
+}
+
+
+
+.sukalp-provides h2{
+    font-style: normal;
+    font-weight: 700;
+    font-size: 48px;
+    letter-spacing: -0.015em;
+}
+.middle-content h4{
+    color: #000;
+    font-family: Open Sans;
+    font-size: 22px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 24px;
+    letter-spacing: -0.33px;
+}
+.middle-content p{
+    color: rgba(0, 0, 0, 0.80);
+    font-family: 'Montserrat';
+    font-size: 13px;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 24px;
+    letter-spacing: -0.195px;
+   
+    padding: 0;
+    margin-top: 20px;
+}
+.middle-content ul li{
+    font-family: 'Montserrat';
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.80);
+}
+
+.vehicles-desc h4{
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: -0.015em;
+}
+.vehicles-desc p{
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 30px;    
+    letter-spacing: -0.015em;    
+    color: rgba(0, 0, 0, 0.8);
+}
+@media (min-width: 768px){
+    .home-banner{
+        gap: 30px;
+        align-items: center;
+    }
+    .banner-slider .slick-dots{
+        bottom: -40px;
+        right: -80px;
+        text-align: right;
+    }
+}
+@media (max-width: 767px){
+    .banner-slider .slick-dots{
+        bottom: -60px;
+    }
+}
