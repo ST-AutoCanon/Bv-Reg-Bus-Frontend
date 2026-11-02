@@ -199,3 +199,37 @@
     }
 }
 
+
+
+/* Fix footer overlapping the form */
+html,
+body,
+#root {
+    min-height: 100%;
+    height: auto;
+}
+
+body {
+    margin: 0;
+}
+
+#root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Keep the footer in normal document flow */
+#root>footer,
+#root footer {
+    position: static;
+    flex-shrink: 0;
+    width: 100%;
+    margin-top: auto;
+}
+
+/* Allow form content to expand naturally */
+main {
+    min-width: 0;
+    min-height: 0;
+}
