@@ -5,11 +5,7 @@
     text-align: center;
     color: #000;
 }
-.border{
-    border: 1px solid #7FBD2C;
-    height: 1px;
-    width: 100%;
-}
+
 .supplier-tab{
     border: 2px solid #FFFFFF !important;
     border-right: 0 !important;
