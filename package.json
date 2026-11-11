@@ -43,10 +43,10 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "build:prod": "NODE_ENV=production react-scripts build",
-    "test": "react-scripts test",
+    "start": "craco start",
+    "build": "craco build",
+    "build:prod": "NODE_ENV=production craco build",
+    "test": "craco test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -65,6 +65,10 @@
     ]
   },
   "devDependencies": {
-    "@types/react-slick": "^0.23.10"
+    "@craco/craco": "^7.1.0",
+    "@types/react-slick": "^0.23.10",
+    "autoprefixer": "^10.6.2",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^3.4.17"
   }
 }

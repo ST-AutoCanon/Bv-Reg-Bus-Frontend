@@ -12,6 +12,7 @@ import { persistStore } from "redux-persist";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./assets/css/global.css"
+import "./assets/css/tailwind.css";
 import { BrowserRouter } from "react-router-dom";
 let persistor = persistStore(store);
 const container = document.getElementById("root")
