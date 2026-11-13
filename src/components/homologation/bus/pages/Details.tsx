@@ -939,85 +939,92 @@ const Details = ({
         </div>
 
         {/* MAIN FORM AREA */}
-        <main
-          ref={mainContentRef}
-          className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto"
+        
+
+{/* MAIN FORM AREA */}
+<main
+  ref={mainContentRef}
+  className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto"
+>
+  <div className="w-full px-5 pt-6 pb-8">
+
+    {/* SUBCATEGORY TABS */}
+    {loadingSubCategories ? (
+      <div className="px-4 py-4 text-sm text-slate-500">
+        Loading subcategories...
+      </div>
+    ) : (
+      <SubCategories
+        categories={subCategories}
+        selectedCategory={selectedSubCategory}
+        values={formValues}
+        onCategoryChange={handleSubCategoryChange}
+      />
+    )}
+
+    {/* FORM CARD */}
+    <div className="w-full rounded-b-lg rounded-tr-lg border border-[#e5e7eb] bg-white shadow-sm">
+
+      {/* FORM TITLE */}
+      <div className="border-b border-[#e5e7eb] px-6 py-6 sm:px-8">
+        <h2 className="text-xl font-semibold text-[#173b63]">
+          {currentCategory?.name || "Manufacturer Details"}
+          {" - "}
+          {currentSubCategory?.code ||
+            currentSubCategory?.name ||
+            ""}
+        </h2>
+      </div>
+
+      {/* DYNAMIC FIELDS */}
+      {loadingFields ? (
+        <div className="py-8 text-sm text-slate-500">
+          Loading fields...
+        </div>
+      ) : fields.length > 0 ? (
+        <div className="min-w-0">
+          <FormFields
+            fields={fields}
+            values={
+              (formValues[currentSubCategory?.id || ""] ||
+                {}) as FormValues
+            }
+            onChange={handleFieldChange}
+          />
+        </div>
+      ) : (
+        <div className="py-8 text-sm text-slate-500">
+          No fields available.
+        </div>
+      )}
+
+      {/* ERROR MESSAGE */}
+      {error && (
+        <div
+          role="alert"
+          className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
         >
-          <div className="w-full px-5 py-8 pb-10">
-            {loadingSubCategories ? (
-              <div className="px-6 py-4 text-sm text-slate-500">
-                Loading subcategories...
-              </div>
-            ) : (
-              <SubCategories
-                categories={subCategories}
-                selectedCategory={selectedSubCategory}
-                values={formValues}
-                onCategoryChange={handleSubCategoryChange}
-              />
-            )}
-          </div>
+          <p className="font-semibold">
+            Unable to complete request
+          </p>
+          <p className="mt-1">{error}</p>
+        </div>
+      )}
 
-          {/* FORM CARD */}
-          <div className="rounded-[8px] border border-[#e5e7eb] bg-white shadow-sm">
+      {/* FORM ACTIONS */}
+      <div className="mt-10 pt-6">
+        <FormActions
+          onCancel={onClose}
+          onSave={() => void handleSave()}
+          saving={saving}
+        />
+      </div>
 
-            {/* FORM TITLE */}
-            <div className="border-b border-[#e5e7eb] px-6 pb-5 pt-6 sm:px-8">
-              <h2 className="text-lg font-semibold text-[#173b63]">
-                {currentCategory?.name || "Manufacturer Details"}
-                {" - "}
-                {currentSubCategory?.code ||
-                  currentSubCategory?.name ||
-                  ""}
-              </h2>
-            </div>
+    </div>
+  </div>
+</main>
 
-            {/* DYNAMIC FIELDS */}
-            {loadingFields ? (
-              <div className="py-8 text-sm text-slate-500">
-                Loading fields...
-              </div>
-            ) : fields.length > 0 ? (
-              <div className="min-w-0">
-                <FormFields
-                  fields={fields}
-                  values={
-                    (formValues[currentSubCategory?.id || ""] ||
-                      {}) as FormValues
-                  }
-                  onChange={handleFieldChange}
-                />
-              </div>
-            ) : (
-              <div className="py-8 text-sm text-slate-500">
-                No fields available.
-              </div>
-            )}
 
-            {/* ERROR MESSAGE */}
-            {error && (
-              <div
-                role="alert"
-                className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-              >
-                <p className="font-semibold">
-                  Unable to complete request
-                </p>
-                <p className="mt-1">{error}</p>
-              </div>
-            )}
-
-            {/* FORM ACTIONS */}
-            <div className="mt-10  pt-6">
-              <FormActions
-                onCancel={onClose}
-                onSave={() => void handleSave()}
-                saving={saving}
-              />
-            </div>
-
-          </div>
-        </main>
 
         {/* MOBILE ACTIONS */}
         <div className="sticky bottom-0 bg-white p-4 sm:hidden">

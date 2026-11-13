@@ -181,11 +181,14 @@
 /////////////
 
 
+
 import {
   isVisible,
   type FormValues,
   type VisibilityRule,
 } from "../utils/visibility";
+
+import infoIcon from "../../../../assets/images/infoicon.png";
 
 type FieldOption = {
   label: string;
@@ -208,6 +211,13 @@ type Field = {
   placeholder?: string;
   isRequired: boolean;
   options?: FieldOption[];
+  clauseNumber?: string;
+  tables?: string[];
+  helpText?: string;
+  validation?: {
+    unit?: string;
+    [key: string]: unknown;
+  };
   visibility?: VisibilityRule | VisibilityRule[];
 };
 
@@ -288,7 +298,6 @@ const FormFields = ({ fields, values, onChange }: FormFieldsProps) => {
                   onChange={(event) => onChange(field.name, event.target.value)}
                   className="h-4 w-4 accent-blue-600"
                 />
-
                 <span>{option.label}</span>
               </label>
             ))}
@@ -305,7 +314,6 @@ const FormFields = ({ fields, values, onChange }: FormFieldsProps) => {
             onChange={(event) => onChange(field.name, event.target.checked)}
             className="h-4 w-4 rounded accent-blue-600"
           />
-
           <span className="text-sm text-gray-700">
             {field.placeholder || field.label}
           </span>
@@ -349,11 +357,32 @@ const FormFields = ({ fields, values, onChange }: FormFieldsProps) => {
           key={field.id}
           className={field.type === "textarea" ? "md:col-span-2" : ""}
         >
-          <label className="mb-2 block text-sm font-medium leading-5 text-gray-700">
-            {field.label}
+          <div className="mb-2 flex items-center gap-2">
+            <label className="text-sm font-medium leading-5 text-gray-700">
+              {field.label}
+              {field.isRequired && (
+                <span className="ml-1 text-red-500">*</span>
+              )}
+            </label>
 
-            {field.isRequired && <span className="ml-1 text-red-500">*</span>}
-          </label>
+            {field.placeholder && (
+              <span className="group relative inline-flex items-center">
+                <img
+                  src={infoIcon}
+                  alt="Info"
+                  className="h-4 w-4 cursor-pointer object-contain"
+                  tabIndex={0}
+                />
+
+                <span
+                  role="tooltip"
+                  className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-max max-w-64 -translate-x-1/2 rounded-md bg-gray-800 px-3 py-2 text-xs text-white shadow-lg group-hover:visible group-focus-within:visible"
+                >
+                  {field.placeholder}
+                </span>
+              </span>
+            )}
+          </div>
 
           {renderField(field)}
         </div>

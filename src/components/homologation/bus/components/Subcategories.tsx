@@ -32,7 +32,7 @@ const SubCategories = ({
 
   return (
     <div className="border-b bg-gray-50">
-     <div className="flex gap-2 overflow-x-auto px-4 py-3 sm:px-1">
+      <div className="flex gap-2 overflow-x-auto px-6 py-3">
         {visibleCategories.map(({ category, originalIndex }) => (
           <button
             key={category.id}
