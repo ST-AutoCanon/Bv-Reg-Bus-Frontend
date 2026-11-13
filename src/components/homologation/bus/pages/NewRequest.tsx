@@ -25,9 +25,7 @@ interface ApiResponse {
   errors?: Record<string, string | string[]>;
 }
 
-const API_URL = (
-  process.env.REACT_APP_BASE_URL || "http://localhost:3000/api"
-).replace(/\/+$/, "");
+const API_URL = (process.env.REACT_APP_BASE_URL || "").replace(/\/+$/, "");
 
 // Get authentication token from Redux Persist
 const getStoredToken = (): string | null => {

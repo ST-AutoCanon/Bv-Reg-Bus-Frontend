@@ -1,6 +1,6 @@
 import { BusFormData } from "../components/homologation/BusPages/formData/BusFormData";
 
-const API_URL = "http://localhost:3009/api";
+const API_URL = (process.env.REACT_APP_BASE_URL || "").replace(/\/+$/, "");
 
 export const saveBusForms = async (
   requestId: string,

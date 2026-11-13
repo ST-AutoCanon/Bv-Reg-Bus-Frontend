@@ -30,10 +30,8 @@ interface ApiResponse<T> {
   data?: T;
   submissions?: T;
 }
+const API_URL = (process.env.REACT_APP_BASE_URL || "").replace(/\/+$/, "");
 
-const API_URL = (
-  process.env.REACT_APP_BASE_URL || "http://localhost:3000/api"
-).replace(/\/+$/, "");
 
 // Get authentication token
 const getStoredToken = (): string | null => {

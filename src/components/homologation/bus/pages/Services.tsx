@@ -121,7 +121,7 @@ const Home = () => {
               <div className="border border-white/10 bg-[#1A1D1F] p-3 shadow-2xl">
                 <div className="relative overflow-hidden">
                   <img
-                    src="https://auto-canon.in/static/media/banner_aboutabout_baner.3cd6d88725b0aed559fe.png"
+                    src={`${process.env.REACT_APP_BASE_URL?.replace(/\/api\/?$/, "")}/static/media/banner_aboutabout_baner.3cd6d88725b0aed559fe.png`}
                     alt="Auto-Canon automotive certification"
                     className="h-[420px] w-full object-cover"
                   />

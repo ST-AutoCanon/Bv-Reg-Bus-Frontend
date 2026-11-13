@@ -35,7 +35,7 @@ type SelectedFiles = Record<number, File>;
    API
 ========================================================= */
 
-const API_URL = "http://localhost:5000/api/table13";
+const API_URL = `${process.env.REACT_APP_API_URL}/table13`;
 
 /* =========================================================
    DEFAULT HEADER
