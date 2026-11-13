@@ -391,7 +391,10 @@ const Login: FC = () => {
     console.log("Vehicle Type:", resp.data.vehicleType);
     console.log("Current Path Before:", window.location.pathname);
 
-    navigate("/BusHomologation", { replace: true });
+                        // navigate("/BusHomologation", { replace: true });
+                            navigate("/BusDashboard", { replace: true });
+
+                        
 
     console.log("Navigation called for Bus");
 } else {
