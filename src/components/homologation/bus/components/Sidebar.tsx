@@ -8,7 +8,7 @@ import {
   Building2,
   Factory,
   Bus,
-  Scale,
+  Weight,
   CircleGauge,
   FileText,
   Bell,
@@ -26,6 +26,7 @@ type SidebarProps = {
   selectedCategory: number;
   values: FormValues;
   onCategoryChange: (index: number) => void;
+  collapsed: boolean;
 };
 
 const getCategoryIcon = (name: string) => {
@@ -34,7 +35,7 @@ const getCategoryIcon = (name: string) => {
   if (value.includes("manufacturer details")) return Building2;
   if (value.includes("plant")) return Factory;
   if (value.includes("vehicle")) return Bus;
-  if (value.includes("weighment")) return Scale;
+  if (value.includes("weighment")) return Weight;
   if (value.includes("tyre") || value.includes("wheel")) return CircleGauge;
 
   return FileText;
@@ -45,6 +46,7 @@ const Sidebar = ({
   selectedCategory,
   values,
   onCategoryChange,
+  collapsed,
 }: SidebarProps) => {
   const visibleCategories = categories
     .map((category, originalIndex) => ({
@@ -62,20 +64,17 @@ const Sidebar = ({
   ];
 
   return (
-<aside
-  className="
-    flex
-    h-full
-    min-h-0
-    w-full
-    flex-col
-    overflow-y-auto
-    overflow-x-hidden
+    <aside
+      className={`
+    flex h-full min-h-0 shrink-0 flex-col
+    overflow-x-hidden overflow-y-auto
     bg-[#075441]
     border-r border-white/10
-  "
->
- <nav className="flex flex-col pt-2">
+    transition-all duration-300 ease-in-out
+    ${collapsed ? "w-[76px]" : "w-[300px]"}
+  `}
+    >
+      <nav className="flex flex-col pt-2">
         {visibleCategories.map(({ category, originalIndex }) => {
           const Icon = getCategoryIcon(category.name);
           const isSelected = selectedCategory === originalIndex;
@@ -86,15 +85,15 @@ const Sidebar = ({
               type="button"
               onClick={() => onCategoryChange(originalIndex)}
               className={`
-                flex min-h-[52px] w-full items-center gap-4
-                px-6 py-3 text-left text-sm font-medium
-                transition-colors duration-200
-                ${
-                  isSelected
-                    ? "bg-[#087054] text-white"
-                    : "bg-transparent text-white hover:bg-[#086047]"
+  flex min-h-[52px] w-full items-center
+  ${collapsed ? "justify-center px-0" : "gap-4 px-6"}
+  py-3 text-left text-sm font-medium
+  transition-colors duration-200
+  ${isSelected
+                  ? "bg-[#087054] text-white"
+                  : "bg-transparent text-white hover:bg-[#086047]"
                 }
-              `}
+`}
             >
               <Icon
                 size={21}
@@ -102,23 +101,28 @@ const Sidebar = ({
                 className="shrink-0"
               />
 
-              <span>{category.name}</span>
+              {!collapsed && (
+                <span className="whitespace-nowrap">
+                  {category.name}
+                </span>
+              )}
             </button>
           );
         })}
 
         {/* BOTTOM MENU ITEMS */}
-       <div className="shrink-0">
+        <div className="shrink-0">
           {bottomItems.map((item) => {
             const Icon = item.icon;
 
             return (
               <div
                 key={item.name}
-                className="
-                  flex min-h-[52px] items-center gap-4
-                  px-6 py-3 text-sm font-medium text-white
-                "
+                className={`
+  flex min-h-[52px] items-center
+  ${collapsed ? "justify-center px-0" : "gap-4 px-6"}
+  py-3 text-sm font-medium text-white
+`}
               >
                 <Icon
                   size={21}
@@ -126,7 +130,11 @@ const Sidebar = ({
                   className="shrink-0"
                 />
 
-                <span>{item.name}</span>
+                {!collapsed && (
+                  <span className="whitespace-nowrap">
+                    {item.name}
+                  </span>
+                )}
               </div>
             );
           })}

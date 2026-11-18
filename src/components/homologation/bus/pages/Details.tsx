@@ -61,19 +61,39 @@ type FieldOption = {
   displayOrder: number;
 };
 
+type Variant = {
+  id: string;
+  label: string;
+};
+
+type VariantConfig = {
+  vehicleVariants?: Variant[];
+  wdVariants?: Variant[];
+};
+
+type FieldsApiData = {
+  fields?: Field[];
+
+  technologyVariantConfig?: VariantConfig;
+  variantConfig?: VariantConfig;
+
+  vehicleVariants?: Variant[];
+  wdVariants?: Variant[];
+};
+
 type Field = {
   id: string;
   subCategoryId: string;
   name: string;
   label: string;
   type:
-  | "text"
-  | "number"
-  | "date"
-  | "dropdown"
-  | "radio"
-  | "checkbox"
-  | "textarea";
+    | "text"
+    | "number"
+    | "date"
+    | "dropdown"
+    | "radio"
+    | "checkbox"
+    | "textarea";
   placeholder: string;
   isRequired: boolean;
   displayOrder: number;
@@ -112,13 +132,12 @@ type DetailsProps = {
 | API CONFIGURATION
 |--------------------------------------------------------------------------
 */
+
 const API_URL = (process.env.REACT_APP_BASE_URL || "").replace(/\/+$/, "");
 
 /*
 |--------------------------------------------------------------------------
 | TOKEN RETRIEVAL
-|--------------------------------------------------------------------------
-| Uses the same token lookup strategy as the Dashboard.
 |--------------------------------------------------------------------------
 */
 
@@ -152,10 +171,7 @@ const getStoredToken = (): string | null => {
       }
     }
   } catch (err) {
-    console.error(
-      "[Details] Failed to read stored token:",
-      err,
-    );
+    console.error("[Details] Failed to read stored token:", err);
   }
 
   return localStorage.getItem("token")?.trim() || null;
@@ -191,9 +207,7 @@ const readApiResponse = async <T,>(
       );
     }
   } else if (response.ok) {
-    throw new Error(
-      "Empty response body from API.",
-    );
+    throw new Error("Empty response body from API.");
   }
 
   if (!response.ok) {
@@ -221,23 +235,22 @@ const Details = ({
   onClose,
   onSaved,
 }: DetailsProps) => {
-  const [token] = useState<string | null>(
-    () => getStoredToken(),
-  );
+  const [token] = useState<string | null>(() => getStoredToken());
+
   const mainContentRef = useRef<HTMLElement | null>(null);
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
 
+  // Variants are populated only from backend API response.
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [wdVariants, setWdVariants] = useState<Variant[]>([]);
+
   /*
-   * All form values are preserved by subcategory ID.
-   *
-   * {
-   *   subCategoryId: {
-   *     fieldName: value
-   *   }
-   * }
+   * Form values are preserved by subcategory ID.
    */
   const [formValues, setFormValues] =
     useState<SubmissionFormValues>({});
@@ -246,19 +259,21 @@ const Details = ({
   const [selectedSubCategory, setSelectedSubCategory] = useState(0);
 
   const [loadingCategories, setLoadingCategories] = useState(true);
+
   const [loadingSubCategories, setLoadingSubCategories] =
     useState(false);
+
   const [loadingFields, setLoadingFields] = useState(false);
   const [loadingSubmission, setLoadingSubmission] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState("");
+
   const [submission, setSubmission] =
     useState<Submission | null>(null);
 
   const currentCategory = categories[selectedCategory];
   const currentSubCategory = subCategories[selectedSubCategory];
-
 
   console.log("[Details DEBUG]", {
     loadingCategories,
@@ -271,7 +286,8 @@ const Details = ({
     currentSubCategoryName: currentSubCategory?.name,
     fieldsCount: fields.length,
     fieldNames: fields.map((field) => field.name),
-    fieldTypes: fields.map((field) => field.type),
+    vehicleVariants: variants,
+    wdVariants,
   });
 
   /*
@@ -293,9 +309,7 @@ const Details = ({
 
       if (!token) {
         setSubmission(null);
-        setError(
-          "No stored token was found. Please sign in again.",
-        );
+        setError("No stored token was found. Please sign in again.");
         setLoadingSubmission(false);
         return;
       }
@@ -327,7 +341,10 @@ const Details = ({
 
         const loadedSubmission = result.data;
 
-        if (!loadedSubmission || typeof loadedSubmission !== "object") {
+        if (
+          !loadedSubmission ||
+          typeof loadedSubmission !== "object"
+        ) {
           throw new Error(
             "Response does not contain a valid submission.",
           );
@@ -337,10 +354,6 @@ const Details = ({
 
         setSubmission(loadedSubmission);
 
-        /*
-         * Restore the complete saved form.
-         * Do not replace saved values with empty values.
-         */
         setFormValues(
           loadedSubmission.values &&
             typeof loadedSubmission.values === "object"
@@ -350,10 +363,7 @@ const Details = ({
       } catch (err) {
         if (cancelled) return;
 
-        console.error(
-          "[Details] Load submission error:",
-          err,
-        );
+        console.error("[Details] Load submission error:", err);
 
         setError(
           err instanceof Error
@@ -388,21 +398,16 @@ const Details = ({
         setLoadingCategories(true);
         setError("");
 
-        const response = await fetch(
-          `${API_URL}/bus/categories`,
-          {
-            method: "GET",
-            cache: "no-store",
-            headers: {
-              ...(token
-                ? { Authorization: `Bearer ${token}` }
-                : {}),
-              Accept: "application/json",
-              "Cache-Control": "no-cache",
-              Pragma: "no-cache",
-            },
+        const response = await fetch(`${API_URL}/bus/categories`, {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Accept: "application/json",
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
           },
-        );
+        });
 
         const result = await readApiResponse<Category[]>(
           response,
@@ -419,10 +424,7 @@ const Details = ({
       } catch (err) {
         if (cancelled) return;
 
-        console.error(
-          "[Details] Load categories error:",
-          err,
-        );
+        console.error("[Details] Load categories error:", err);
 
         setError(
           err instanceof Error
@@ -457,6 +459,8 @@ const Details = ({
       setSelectedSubCategory(0);
       setSubCategories([]);
       setFields([]);
+      setVariants([]);
+      setWdVariants([]);
       return;
     }
 
@@ -476,6 +480,8 @@ const Details = ({
     if (!currentCategory) {
       setSubCategories([]);
       setFields([]);
+      setVariants([]);
+      setWdVariants([]);
       setLoadingSubCategories(false);
       return;
     }
@@ -484,8 +490,11 @@ const Details = ({
       try {
         setLoadingSubCategories(true);
         setError("");
+
         setSubCategories([]);
         setFields([]);
+        setVariants([]);
+        setWdVariants([]);
 
         const response = await fetch(
           `${API_URL}/bus/subcategories/category/${encodeURIComponent(
@@ -495,9 +504,7 @@ const Details = ({
             method: "GET",
             cache: "no-store",
             headers: {
-              ...(token
-                ? { Authorization: `Bearer ${token}` }
-                : {}),
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
               Accept: "application/json",
               "Cache-Control": "no-cache",
               Pragma: "no-cache",
@@ -521,10 +528,7 @@ const Details = ({
       } catch (err) {
         if (cancelled) return;
 
-        console.error(
-          "[Details] Load subcategories error:",
-          err,
-        );
+        console.error("[Details] Load subcategories error:", err);
 
         setError(
           err instanceof Error
@@ -534,6 +538,8 @@ const Details = ({
 
         setSubCategories([]);
         setFields([]);
+        setVariants([]);
+        setWdVariants([]);
       } finally {
         if (!cancelled) {
           setLoadingSubCategories(false);
@@ -550,7 +556,7 @@ const Details = ({
 
   /*
   |--------------------------------------------------------------------------
-  | LOAD FIELDS
+  | LOAD FIELDS AND BACKEND VARIANT CONFIGURATION
   |--------------------------------------------------------------------------
   */
 
@@ -559,6 +565,8 @@ const Details = ({
 
     if (!currentSubCategory) {
       setFields([]);
+      setVariants([]);
+      setWdVariants([]);
       setLoadingFields(false);
       return;
     }
@@ -567,7 +575,10 @@ const Details = ({
       try {
         setLoadingFields(true);
         setError("");
+
         setFields([]);
+        setVariants([]);
+        setWdVariants([]);
 
         const response = await fetch(
           `${API_URL}/bus/fields/subcategory/${encodeURIComponent(
@@ -577,9 +588,7 @@ const Details = ({
             method: "GET",
             cache: "no-store",
             headers: {
-              ...(token
-                ? { Authorization: `Bearer ${token}` }
-                : {}),
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
               Accept: "application/json",
               "Cache-Control": "no-cache",
               Pragma: "no-cache",
@@ -587,30 +596,76 @@ const Details = ({
           },
         );
 
-        const result = await readApiResponse<Field[]>(
+        const result = await readApiResponse<FieldsApiData>(
           response,
           "Failed to fetch fields",
         );
 
-        const fetchedFields = Array.isArray(result.data)
-          ? result.data
+        const responseData: FieldsApiData = result.data ?? {
+          fields: [],
+        };
+
+        const fetchedFields = Array.isArray(responseData.fields)
+          ? responseData.fields
           : [];
 
+        /*
+         * Read variants from the backend configuration.
+         *
+         * Supported response formats:
+         *
+         * 1. data.technologyVariantConfig.vehicleVariants
+         * 2. data.variantConfig.vehicleVariants
+         * 3. data.vehicleVariants
+         *
+         * Same structure applies to wdVariants.
+         */
+        const variantConfig =
+          responseData.technologyVariantConfig ??
+          responseData.variantConfig ??
+          responseData;
+
+        const fetchedVariants = Array.isArray(
+          variantConfig.vehicleVariants,
+        )
+          ? variantConfig.vehicleVariants
+          : [];
+
+        const fetchedWdVariants = Array.isArray(
+          variantConfig.wdVariants,
+        )
+          ? variantConfig.wdVariants
+          : [];
+
+        console.log("[BACKEND VARIANT CONFIG DEBUG]", {
+          subCategoryId: currentSubCategory.id,
+          subCategoryName: currentSubCategory.name,
+          completeResponse: responseData,
+          variantConfig,
+          vehicleVariants: fetchedVariants,
+          vehicleVariantCount: fetchedVariants.length,
+          wdVariants: fetchedWdVariants,
+          wdVariantCount: fetchedWdVariants.length,
+        });
+
+        console.log(
+          "[FIELDS API DEBUG] Field names:",
+          fetchedFields.map((field) => ({
+            name: field.name,
+            label: field.label,
+            placeholder: field.placeholder,
+          })),
+        );
 
         if (cancelled) return;
 
-        console.log(
-          "[FIELDS API DEBUG] Subcategory ID:",
-          currentSubCategory.id,
-        );
-        console.log("[FIELDS API DEBUG] Response:", response);
-        console.log("[FIELDS API DEBUG] Parsed fields:", fetchedFields);
-        console.log("[FIELDS API DEBUG] Field count:", fetchedFields.length);
         setFields(fetchedFields);
+        setVariants(fetchedVariants);
+        setWdVariants(fetchedWdVariants);
 
         /*
          * Initialize missing values only.
-         * Previously saved values are never overwritten.
+         * Existing saved values are never overwritten.
          */
         setFormValues((previous) => {
           const existingValues =
@@ -640,10 +695,7 @@ const Details = ({
       } catch (err) {
         if (cancelled) return;
 
-        console.error(
-          "[Details] Load fields error:",
-          err,
-        );
+        console.error("[Details] Load fields error:", err);
 
         setError(
           err instanceof Error
@@ -652,6 +704,8 @@ const Details = ({
         );
 
         setFields([]);
+        setVariants([]);
+        setWdVariants([]);
       } finally {
         if (!cancelled) {
           setLoadingFields(false);
@@ -704,13 +758,9 @@ const Details = ({
     setSelectedSubCategory(0);
     setSubCategories([]);
     setFields([]);
+    setVariants([]);
+    setWdVariants([]);
     setError("");
-
-    /*
-     * Keep formValues unchanged.
-     * Saved and unsaved values remain available when
-     * switching back to a category.
-     */
   };
 
   /*
@@ -724,6 +774,8 @@ const Details = ({
 
     setSelectedSubCategory(index);
     setFields([]);
+    setVariants([]);
+    setWdVariants([]);
     setError("");
   };
 
@@ -775,9 +827,7 @@ const Details = ({
     if (saving) return;
 
     if (!token) {
-      setError(
-        "No stored token was found. Please sign in again.",
-      );
+      setError("No stored token was found. Please sign in again.");
       return;
     }
 
@@ -790,10 +840,6 @@ const Details = ({
       setSaving(true);
       setError("");
 
-      /*
-       * PATCH the complete form, not only the current
-       * subcategory's values.
-       */
       const completeValues = formValues;
 
       const response = await fetch(
@@ -820,26 +866,19 @@ const Details = ({
         "Failed to save request",
       );
 
-      /*
-       * Update the local submission when the API returns it.
-       * Some APIs return success without a data object.
-       */
       if (result.data && typeof result.data === "object") {
         setSubmission(result.data);
       }
 
       await onSaved();
     } catch (err) {
-      console.error(
-        "[Details] Save request error:",
-        err,
-      );
+      console.error("[Details] Save request error:", err);
 
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Failed to save request.");
-      }
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save request.",
+      );
     } finally {
       setSaving(false);
     }
@@ -853,18 +892,14 @@ const Details = ({
 
   if (loadingCategories || loadingSubmission) {
     return (
-      // <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="flex min-h-[60vh] items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
-          <div
-            className="
-              h-10 w-10 animate-spin rounded-full
-              border-4 border-slate-200 
-            "
-          />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200" />
 
           <p className="text-sm font-medium text-slate-500">
-            {loadingSubmission ? "Loading request..." : "Loading form..."}
+            {loadingSubmission
+              ? "Loading request..."
+              : "Loading form..."}
           </p>
         </div>
       </div>
@@ -877,32 +912,43 @@ const Details = ({
   |--------------------------------------------------------------------------
   */
 
-
   return (
     <div className="flex h-screen min-h-0 w-full overflow-hidden bg-[#f8fafc]">
       {/* LEFT SIDEBAR */}
-      <div className="hidden h-full w-[290px] shrink-0 overflow-y-auto lg:flex">
+      <div
+        className={`
+          hidden h-full shrink-0 overflow-hidden
+          lg:flex
+          transition-[width] duration-300 ease-in-out
+          ${sidebarCollapsed ? "w-[76px]" : "w-[300px]"}
+        `}
+      >
         <Sidebar
           categories={categories}
           selectedCategory={selectedCategory}
           values={formValues}
           onCategoryChange={handleCategoryChange}
+          collapsed={sidebarCollapsed}
         />
       </div>
 
       {/* RIGHT CONTENT */}
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+        onMouseEnter={() => setSidebarCollapsed(true)}
+        onMouseLeave={() => setSidebarCollapsed(false)}
+      >
         {/* BLUE VEHICLE INFORMATION HEADER */}
         <div className="flex min-h-[90px] shrink-0 flex-wrap items-center gap-8 bg-[#2875bd] px-8 py-5 text-white">
-          <div className="h-[70px] w-[70] shrink-0 overflow-hidden rounded-full border-4 border-yellow-400 bg-white">
+          <div className="h-[70px] w-[70px] shrink-0 overflow-hidden rounded-full border-4 border-yellow-400 bg-white">
             <img
               src={Busimage}
               alt="Sleeper Bus"
               className="h-full w-full rounded-full object-cover"
             />
           </div>
-          <div className="grid flex-1 grid-cols-2 gap-x-8 gap-y-4 md:grid-cols-4">
 
+          <div className="grid flex-1 grid-cols-2 gap-x-8 gap-y-4 md:grid-cols-4">
             <div>
               <p className="text-sm font-semibold">Vehicle Type</p>
               <p className="text-sm font-bold">
@@ -930,97 +976,91 @@ const Details = ({
                 {currentCategory?.name || "Manufacturer Details"}
               </p>
             </div>
-
           </div>
         </div>
 
         {/* MAIN FORM AREA */}
-        
-
-{/* MAIN FORM AREA */}
-<main
-  ref={mainContentRef}
-  className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto"
->
-  <div className="w-full px-5 pt-6 pb-8">
-
-    {/* SUBCATEGORY TABS */}
-    {loadingSubCategories ? (
-      <div className="px-4 py-4 text-sm text-slate-500">
-        Loading subcategories...
-      </div>
-    ) : (
-      <SubCategories
-        categories={subCategories}
-        selectedCategory={selectedSubCategory}
-        values={formValues}
-        onCategoryChange={handleSubCategoryChange}
-      />
-    )}
-
-    {/* FORM CARD */}
-    <div className="w-full rounded-b-lg rounded-tr-lg border border-[#e5e7eb] bg-white shadow-sm">
-
-      {/* FORM TITLE */}
-      <div className="border-b border-[#e5e7eb] px-6 py-6 sm:px-8">
-        <h2 className="text-xl font-semibold text-[#173b63]">
-          {currentCategory?.name || "Manufacturer Details"}
-          {" - "}
-          {currentSubCategory?.code ||
-            currentSubCategory?.name ||
-            ""}
-        </h2>
-      </div>
-
-      {/* DYNAMIC FIELDS */}
-      {loadingFields ? (
-        <div className="py-8 text-sm text-slate-500">
-          Loading fields...
-        </div>
-      ) : fields.length > 0 ? (
-        <div className="min-w-0">
-          <FormFields
-            fields={fields}
-            values={
-              (formValues[currentSubCategory?.id || ""] ||
-                {}) as FormValues
-            }
-            onChange={handleFieldChange}
-          />
-        </div>
-      ) : (
-        <div className="py-8 text-sm text-slate-500">
-          No fields available.
-        </div>
-      )}
-
-      {/* ERROR MESSAGE */}
-      {error && (
-        <div
-          role="alert"
-          className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        <main
+          ref={mainContentRef}
+          className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto"
         >
-          <p className="font-semibold">
-            Unable to complete request
-          </p>
-          <p className="mt-1">{error}</p>
-        </div>
-      )}
+          <div className="w-full px-5 pb-8 pt-6">
+            {/* SUBCATEGORY TABS */}
+            {loadingSubCategories ? (
+              <div className="px-4 py-4 text-sm text-slate-500">
+                Loading subcategories...
+              </div>
+            ) : (
+              <SubCategories
+                categories={subCategories}
+                selectedCategory={selectedSubCategory}
+                values={formValues}
+                onCategoryChange={handleSubCategoryChange}
+              />
+            )}
 
-      {/* FORM ACTIONS */}
-      <div className="mt-10 pt-6">
-        <FormActions
-          onCancel={onClose}
-          onSave={() => void handleSave()}
-          saving={saving}
-        />
-      </div>
+            {/* FORM CARD */}
+            <div className="w-full rounded-b-lg rounded-tr-lg border border-[#e5e7eb] bg-white shadow-sm">
+              {/* FORM TITLE */}
+              <div className="border-b border-[#e5e7eb] px-6 py-6 sm:px-8">
+                <h2 className="text-xl font-semibold text-[#173b63]">
+                  {currentCategory?.name || "Manufacturer Details"}
+                  {" - "}
+                  {currentSubCategory?.code ||
+                    currentSubCategory?.name ||
+                    ""}
+                </h2>
+              </div>
 
-    </div>
-  </div>
-</main>
+              {/* DYNAMIC FIELDS */}
+              {loadingFields ? (
+                <div className="py-8 text-sm text-slate-500">
+                  Loading fields...
+                </div>
+              ) : fields.length > 0 ? (
+                <div className="min-w-0">
+                  <FormFields
+                    fields={fields}
+                    variantconfig={variants}
+                    wdVariants={wdVariants}
+                    values={
+                      currentSubCategory
+                        ? formValues[currentSubCategory.id] || {}
+                        : {}
+                    }
+                    onChange={handleFieldChange}
+                  />
+                </div>
+              ) : (
+                <div className="py-8 text-sm text-slate-500">
+                  No fields available.
+                </div>
+              )}
 
+              {/* ERROR MESSAGE */}
+              {error && (
+                <div
+                  role="alert"
+                  className="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
+                  <p className="font-semibold">
+                    Unable to complete request
+                  </p>
+                  <p className="mt-1">{error}</p>
+                </div>
+              )}
 
+              {/* FORM ACTIONS */}
+              <div className="mt-10 pt-6">
+                <FormActions
+                  onCancel={onClose}
+                  onSave={() => void handleSave()}
+                  saving={saving}
+                />
+              </div>
+            </div>
+          </div>
+        </main>
 
         {/* MOBILE ACTIONS */}
         <div className="sticky bottom-0 bg-white p-4 sm:hidden">
@@ -1044,12 +1084,9 @@ const Details = ({
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );
-}
-
+};
 
 export default Details;
-
