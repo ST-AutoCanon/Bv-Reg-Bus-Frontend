@@ -7,6 +7,7 @@ import SubCategories from "../components/Subcategories";
 import FormFields from "../components/FormFields";
 import FormActions from "../components/FormAction";
 import Busimage from "../../../../assets/images/Busimage1.png";
+import ApproveSuccess from "../../../Auth/approveSuccess";
 
 import {
   type FormValues,
@@ -73,10 +74,8 @@ type VariantConfig = {
 
 type FieldsApiData = {
   fields?: Field[];
-
   technologyVariantConfig?: VariantConfig;
   variantConfig?: VariantConfig;
-
   vehicleVariants?: Variant[];
   wdVariants?: Variant[];
 };
@@ -90,7 +89,9 @@ type Field = {
     | "text"
     | "number"
     | "date"
+    | "email"
     | "dropdown"
+    | "select"
     | "radio"
     | "checkbox"
     | "textarea";
@@ -98,7 +99,12 @@ type Field = {
   isRequired: boolean;
   displayOrder: number;
   options: FieldOption[];
-  validation: Record<string, unknown>;
+  validation: {
+    minLength?: number;
+    maxLength?: number;
+    email?: boolean;
+    [key: string]: unknown;
+  };
   isActive: boolean;
   visibility?: VisibilityRule | VisibilityRule[];
 };
@@ -245,13 +251,11 @@ const Details = ({
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
 
-  // Variants are populated only from backend API response.
+  // Backend variants
   const [variants, setVariants] = useState<Variant[]>([]);
   const [wdVariants, setWdVariants] = useState<Variant[]>([]);
 
-  /*
-   * Form values are preserved by subcategory ID.
-   */
+  // Form values preserved by subcategory ID
   const [formValues, setFormValues] =
     useState<SubmissionFormValues>({});
 
@@ -259,21 +263,39 @@ const Details = ({
   const [selectedSubCategory, setSelectedSubCategory] = useState(0);
 
   const [loadingCategories, setLoadingCategories] = useState(true);
-
-  const [loadingSubCategories, setLoadingSubCategories] =
-    useState(false);
-
+  const [loadingSubCategories, setLoadingSubCategories] = useState(false);
   const [loadingFields, setLoadingFields] = useState(false);
   const [loadingSubmission, setLoadingSubmission] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [submission, setSubmission] =
     useState<Submission | null>(null);
 
+  const [dataSaved, setDataSaved] = useState(false);
+
+  const successMsg = "Data Saved Successfully";
+
   const currentCategory = categories[selectedCategory];
   const currentSubCategory = subCategories[selectedSubCategory];
+
+  const technologyFieldNames = [
+    "regenerativeBraking",
+    "startStopSystem",
+    "tyrePressureMonitoringSystem",
+    "sixOrMoreSpeedTransmission",
+    "anyOtherTechnology",
+  ];
+
+  const weighmentFieldNames = [
+    "weights",
+    "vehicleKerbWeight",
+    "frontAxle1Weight",
+    "frontAxle2Weight",
+    "rearAxleWeight",
+  ];
 
   console.log("[Details DEBUG]", {
     loadingCategories,
@@ -319,9 +341,7 @@ const Details = ({
         setError("");
 
         const response = await fetch(
-          `${API_URL}/bus/submissions/${encodeURIComponent(
-            submissionId,
-          )}`,
+          `${API_URL}/bus/submissions/${encodeURIComponent(submissionId)}`,
           {
             method: "GET",
             cache: "no-store",
@@ -341,10 +361,7 @@ const Details = ({
 
         const loadedSubmission = result.data;
 
-        if (
-          !loadedSubmission ||
-          typeof loadedSubmission !== "object"
-        ) {
+        if (!loadedSubmission || typeof loadedSubmission !== "object") {
           throw new Error(
             "Response does not contain a valid submission.",
           );
@@ -609,17 +626,6 @@ const Details = ({
           ? responseData.fields
           : [];
 
-        /*
-         * Read variants from the backend configuration.
-         *
-         * Supported response formats:
-         *
-         * 1. data.technologyVariantConfig.vehicleVariants
-         * 2. data.variantConfig.vehicleVariants
-         * 3. data.vehicleVariants
-         *
-         * Same structure applies to wdVariants.
-         */
         const variantConfig =
           responseData.technologyVariantConfig ??
           responseData.variantConfig ??
@@ -648,14 +654,10 @@ const Details = ({
           wdVariantCount: fetchedWdVariants.length,
         });
 
-        console.log(
-          "[FIELDS API DEBUG] Field names:",
-          fetchedFields.map((field) => ({
-            name: field.name,
-            label: field.label,
-            placeholder: field.placeholder,
-          })),
-        );
+        console.log("[FIELDS API DEBUG]", {
+          fields: fetchedFields,
+          fieldNames: fetchedFields.map((field) => field.name),
+        });
 
         if (cancelled) return;
 
@@ -663,10 +665,7 @@ const Details = ({
         setVariants(fetchedVariants);
         setWdVariants(fetchedWdVariants);
 
-        /*
-         * Initialize missing values only.
-         * Existing saved values are never overwritten.
-         */
+        // Initialize missing values only.
         setFormValues((previous) => {
           const existingValues =
             previous[currentSubCategory.id] || {};
@@ -726,24 +725,62 @@ const Details = ({
   |--------------------------------------------------------------------------
   */
 
-  const handleFieldChange = (
-    name: string,
-    value: string | boolean | number,
-  ) => {
-    if (!currentSubCategory) return;
+ const handleFieldChange = (
+  name: string,
+  value: string | boolean | number,
+) => {
+  if (!currentSubCategory) return;
 
-    const subCategoryId = currentSubCategory.id;
+  // Find the original field, including dynamic variant fields.
+  const matchedField = fields.find(
+    (field) =>
+      name === field.name ||
+      name.startsWith(`${field.name}_`),
+  );
 
-    setFormValues((previous) => ({
-      ...previous,
-      [subCategoryId]: {
-        ...(previous[subCategoryId] || {}),
-        [name]: value,
-      },
-    }));
+  // Prevent alphabets and special characters.
+  if (
+    matchedField?.validation?.numericOnly === true &&
+    typeof value === "string" &&
+    !/^\d*$/.test(value)
+  ) {
+    return;
+  }
 
-    setError("");
-  };
+  const subCategoryId = currentSubCategory.id;
+
+  setFormValues((previous) => ({
+    ...previous,
+    [subCategoryId]: {
+      ...(previous[subCategoryId] || {}),
+      [name]: value,
+    },
+  }));
+
+  // Clear the error when the user corrects the field.
+  setFieldErrors((previous) => {
+    const updated = { ...previous };
+    delete updated[name];
+    return updated;
+  });
+
+  setError("");
+};
+const handleCancel = () => {
+  if (!currentSubCategory) return;
+
+  const subCategoryId = currentSubCategory.id;
+
+  // Clear only the currently selected subcategory's form values.
+  setFormValues((previous) => ({
+    ...previous,
+    [subCategoryId]: {},
+  }));
+
+  // Clear validation errors and messages.
+  setFieldErrors({});
+  setError("");
+};
 
   /*
   |--------------------------------------------------------------------------
@@ -781,7 +818,189 @@ const Details = ({
 
   /*
   |--------------------------------------------------------------------------
-  | GET FIRST VALIDATION ERROR
+  | DYNAMIC FIELD VALIDATION
+  |--------------------------------------------------------------------------
+  */
+
+  const validateSingleField = (
+    field: Field,
+    fieldName: string,
+    displayLabel: string,
+    currentValues: SubCategoryValues,
+  ): boolean => {
+    const rawValue = currentValues[fieldName];
+
+    // Checkbox validation
+    if (field.type === "checkbox") {
+      if (field.isRequired && rawValue !== true) {
+        setError(`${displayLabel} is required.`);
+        return false;
+      }
+
+      return true;
+    }
+
+    const value =
+      rawValue === undefined || rawValue === null
+        ? ""
+        : String(rawValue).trim();
+
+    // Required validation
+    if (field.isRequired && value === "") {
+      setError(`${displayLabel} is required.`);
+      return false;
+    }
+
+    // Optional empty fields do not need further validation.
+    if (value === "") {
+      return true;
+    }
+
+    // Read validation directly from backend JSON.
+    const validation = field.validation ?? {};
+
+    // Minimum length validation
+    if (
+      typeof validation.minLength === "number" &&
+      value.length < validation.minLength
+    ) {
+      setError(
+        `${displayLabel} must contain at least ${validation.minLength} characters.`,
+      );
+      return false;
+    }
+
+    // Maximum length validation
+    if (
+      typeof validation.maxLength === "number" &&
+      value.length > validation.maxLength
+    ) {
+      setError(
+        `${displayLabel} cannot exceed ${validation.maxLength} characters.`,
+      );
+      return false;
+    }
+
+    // Email validation
+    if (
+      (validation.email === true || field.type === "email") &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+    ) {
+      setError(`Please enter a valid ${displayLabel}.`);
+      return false;
+    }
+
+    return true;
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | VALIDATE CURRENT SUBCATEGORY
+  |--------------------------------------------------------------------------
+  */
+
+  const validateCurrentFields = (): boolean => {
+  if (!currentSubCategory) return false;
+
+  const currentValues = formValues[currentSubCategory.id] || {};
+  const errors: Record<string, string> = {};
+
+  const technologyFieldNames = [
+    "regenerativeBraking",
+    "startStopSystem",
+    "tyrePressureMonitoringSystem",
+    "sixOrMoreSpeedTransmission",
+    "anyOtherTechnology",
+  ];
+
+  const weighmentFieldNames = [
+    "weights",
+    "vehicleKerbWeight",
+    "frontAxle1Weight",
+    "frontAxle2Weight",
+    "rearAxleWeight",
+  ];
+
+  fields.forEach((field) => {
+    let fieldNames = [field.name];
+
+    if (technologyFieldNames.includes(field.name)) {
+      fieldNames = variants.map(
+        (variant) => `${field.name}_${variant.id}`
+      );
+    }
+
+    if (weighmentFieldNames.includes(field.name)) {
+      fieldNames = wdVariants.map(
+        (variant) => `${field.name}_${variant.id}`
+      );
+    }
+
+    fieldNames.forEach((fieldName) => {
+      const rawValue = currentValues[fieldName];
+
+      const value =
+        rawValue === undefined || rawValue === null
+          ? ""
+          : String(rawValue).trim();
+
+      const validation = field.validation || {};
+
+      if (
+        field.isRequired &&
+        (field.type === "checkbox"
+          ? rawValue !== true
+          : value === "")
+      ) {
+        errors[fieldName] =
+          field.placeholder || `${field.label} is required`;
+        return;
+      }
+
+      if (!value) return;
+      if (
+  validation.numericOnly === true &&
+  !/^\d+$/.test(value)
+) {
+  errors[fieldName] = "Only numbers are allowed";
+  return;
+}
+
+      if (
+        typeof validation.minLength === "number" &&
+        value.length < validation.minLength
+      ) {
+        errors[fieldName] =
+          `Minimum ${validation.minLength} characters required`;
+        return;
+      }
+
+      if (
+        typeof validation.maxLength === "number" &&
+        value.length > validation.maxLength
+      ) {
+        errors[fieldName] =
+          `Maximum ${validation.maxLength} characters allowed`;
+        return;
+      }
+
+      if (
+        (validation.email === true || field.type === "email") &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+      ) {
+        errors[fieldName] = "Enter a valid email address";
+      }
+    });
+  });
+
+  setFieldErrors(errors);
+
+  return Object.keys(errors).length === 0;
+};
+
+  /*
+  |--------------------------------------------------------------------------
+  | GET FIRST API VALIDATION ERROR
   |--------------------------------------------------------------------------
   */
 
@@ -824,6 +1043,9 @@ const Details = ({
   */
 
   const handleSave = useCallback(async () => {
+    if (!validateCurrentFields()) {
+  return;
+}
     if (saving) return;
 
     if (!token) {
@@ -833,6 +1055,18 @@ const Details = ({
 
     if (!submissionId) {
       setError("Request ID is missing.");
+      return;
+    }
+
+    if (loadingFields || loadingSubCategories) {
+      setError("Please wait until the fields finish loading.");
+      return;
+    }
+
+    // IMPORTANT: Validate before calling the API.
+    const isValid = validateCurrentFields();
+
+    if (!isValid) {
       return;
     }
 
@@ -866,11 +1100,29 @@ const Details = ({
         "Failed to save request",
       );
 
-      if (result.data && typeof result.data === "object") {
-        setSubmission(result.data);
-      }
+     const savedData = result.data;
+
+if (savedData && typeof savedData === "object") {
+  setSubmission((previous) => {
+    if (!previous) {
+      return savedData as Submission;
+    }
+
+    return {
+      ...previous,
+      ...savedData,
+      requestInfo: {
+        ...previous.requestInfo,
+        ...(savedData.requestInfo || {}),
+      },
+    };
+  });
+}
 
       await onSaved();
+
+      // Show success popup only after successful save.
+      setDataSaved(true);
     } catch (err) {
       console.error("[Details] Save request error:", err);
 
@@ -882,7 +1134,19 @@ const Details = ({
     } finally {
       setSaving(false);
     }
-  }, [formValues, onSaved, saving, submissionId, token]);
+  }, [
+    formValues,
+    fields,
+    variants,
+    wdVariants,
+    currentSubCategory,
+    onSaved,
+    saving,
+    submissionId,
+    token,
+    loadingFields,
+    loadingSubCategories,
+  ]);
 
   /*
   |--------------------------------------------------------------------------
@@ -1029,6 +1293,7 @@ const Details = ({
                         : {}
                     }
                     onChange={handleFieldChange}
+                     fieldErrors={fieldErrors}
                   />
                 </div>
               ) : (
@@ -1046,6 +1311,7 @@ const Details = ({
                   <p className="font-semibold">
                     Unable to complete request
                   </p>
+
                   <p className="mt-1">{error}</p>
                 </div>
               )}
@@ -1053,7 +1319,7 @@ const Details = ({
               {/* FORM ACTIONS */}
               <div className="mt-10 pt-6">
                 <FormActions
-                  onCancel={onClose}
+                  onCancel={handleCancel}
                   onSave={() => void handleSave()}
                   saving={saving}
                 />
@@ -1067,7 +1333,7 @@ const Details = ({
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleCancel}
               disabled={saving}
               className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"
             >
@@ -1085,6 +1351,15 @@ const Details = ({
           </div>
         </div>
       </div>
+
+      {/* SUCCESS POPUP */}
+      {dataSaved ? (
+        <ApproveSuccess
+          successMsg={successMsg}
+          approved={dataSaved}
+          onClose={() => setDataSaved(false)}
+        />
+      ) : null}
     </div>
   );
 };

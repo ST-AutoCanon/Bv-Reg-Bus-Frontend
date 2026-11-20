@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NewRequest from "./NewRequest";
 import TableDocuments from "../components/TableDocuments";
+import { EditIcon } from "@chakra-ui/icons";
 
 interface RequestInfo {
   vehicleType?: string;
@@ -16,6 +17,7 @@ interface RequestInfo {
 interface Submission {
   _id: string;
   requestInfo?: RequestInfo;
+  requestNumber?:string;
   values?: Record<string, unknown>;
   status: "draft" | "completed";
   createdAt?: string;
@@ -176,7 +178,17 @@ const Dashboard = () => {
         );
       }
 
-      setSubmissions(result);
+     console.log("GET SUBMISSIONS RESPONSE:", data);
+
+console.table(
+  result.map((item) => ({
+    id: item._id,
+    requestNumber: item.requestNumber,
+    vehicle: item.requestInfo?.vehicleType,
+  }))
+);
+
+setSubmissions(result);
       setSelectedRequestId((previous) => {
         return result.some((item) => item._id === previous)
           ? previous
@@ -568,9 +580,9 @@ const Dashboard = () => {
                           overflowWrap: "anywhere",
                         }}
                       >
-                        <div>Request #{index + 1}</div>
+                        <div>{submission.requestNumber || "-"}</div>
 
-                        <div
+                        {/* <div
                           style={{
                             fontSize: "11px",
                             color: "#94a3b8",
@@ -578,7 +590,7 @@ const Dashboard = () => {
                           }}
                         >
                           {submission._id}
-                        </div>
+                        </div> */}
                       </td>
 
                       {/* Vehicle */}
@@ -693,13 +705,12 @@ const Dashboard = () => {
                         >
                           {/* Edit / Open */}
 
+
                           <button
                             type="button"
-                            title="Open request"
-                            aria-label="Open request"
-                            onClick={() =>
-                              handleOpenSubmission(submission._id)
-                            }
+                            title="Edit request"
+                            aria-label="Edit request"
+                            onClick={() => handleOpenSubmission(submission._id)}
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
@@ -711,19 +722,7 @@ const Dashboard = () => {
                               padding: "4px",
                             }}
                           >
-                            <svg
-                              width="22"
-                              height="22"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.9"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M12 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11" />
-                              <path d="M16 3.5a2.1 2.1 0 0 1 3 3L11 14.5 7 15.5l1-4z" />
-                            </svg>
+                            <EditIcon w={5} h={5} />
                           </button>
 
                           {/* Copy Request ID */}

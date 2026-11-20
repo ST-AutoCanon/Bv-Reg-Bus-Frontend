@@ -22,7 +22,9 @@ type Field = {
     | "text"
     | "number"
     | "date"
+    | "email"
     | "dropdown"
+    | "select"
     | "radio"
     | "checkbox"
     | "textarea";
@@ -34,7 +36,9 @@ type Field = {
   tables?: string[];
   helpText?: string;
   validation?: {
-    unit?: string;
+    minLength?: number;
+    maxLength?: number;
+    email?: boolean;
     [key: string]: unknown;
   };
   visibility?: VisibilityRule | VisibilityRule[];
@@ -47,14 +51,17 @@ type Variant = {
 
 type FormFieldsProps = {
   fields: Field[];
-
-  // These variants come directly from the backend variantconfig.json
   variantconfig: Variant[];
   wdVariants: Variant[];
-
   values: FormValues;
-  onChange: (name: string, value: string | boolean | number) => void;
+  onChange: (
+    name: string,
+    value: string | boolean | number
+  ) => void;
+  fieldErrors?: Record<string, string>;
 };
+
+// Backend image URL
 const getInfoImageUrl = (imagePath: string): string => {
   return `${process.env.PUBLIC_URL}/${imagePath.replace(/^\/+/, "")}`;
 };
@@ -65,17 +72,18 @@ const FormFields = ({
   variantconfig,
   wdVariants,
   onChange,
+   fieldErrors = {},
 }: FormFieldsProps) => {
   const visibleFields = fields.filter((field) =>
-    isVisible(field.visibility, values),
+    isVisible(field.visibility, values)
   );
 
-  // Use ONLY variants received from backend.
-  // No frontend hardcoded variant defaults.
+  // Backend technology variants
   const technologyVariants = Array.isArray(variantconfig)
     ? variantconfig
     : [];
 
+  // Backend weighment variants
   const weighmentVariants = Array.isArray(wdVariants)
     ? wdVariants
     : [];
@@ -89,7 +97,7 @@ const FormFields = ({
   ];
 
   const technologyFields = visibleFields.filter((field) =>
-    technologyFieldNames.includes(field.name),
+    technologyFieldNames.includes(field.name)
   );
 
   const weighmentFieldNames = [
@@ -101,13 +109,13 @@ const FormFields = ({
   ];
 
   const weighmentFields = visibleFields.filter((field) =>
-    weighmentFieldNames.includes(field.name),
+    weighmentFieldNames.includes(field.name)
   );
 
   const normalFields = visibleFields.filter(
     (field) =>
       !technologyFieldNames.includes(field.name) &&
-      !weighmentFieldNames.includes(field.name),
+      !weighmentFieldNames.includes(field.name)
   );
 
   const [selectedImages, setSelectedImages] =
@@ -131,120 +139,234 @@ const FormFields = ({
   const inputClass =
     "block w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm leading-5 text-gray-800 placeholder:text-gray-400 placeholder:opacity-100 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
-  // Normal field rendering
-  const renderField = (field: Field) => {
-    const value = values[field.name] ?? "";
+    const getFieldPlaceholder = (field: Field, fieldName: string) => {
+  return fieldErrors[fieldName] || field.placeholder || "";
+};
 
-    if (field.type === "textarea") {
-      return (
-        <textarea
-          value={String(value)}
-          placeholder={field.placeholder}
-          required={field.isRequired}
-          onChange={(event) =>
-            onChange(field.name, event.target.value)
-          }
-          className={`${inputClass} min-h-28 resize-y`}
-        />
-      );
-    }
+const getFieldClass = (fieldName: string, extraClass = "") => {
+  return `${inputClass} ${fieldErrors[fieldName] ? "border-red-500 focus:border-red-500 focus:ring-red-100" : ""} ${extraClass}`;
+};
+  // Dynamically read validation rules from backend JSON
+  const getValidationProps = (field: Field) => {
+    const validation = field.validation ?? {};
 
-    if (field.type === "dropdown") {
-      return (
-        <select
-          value={String(value)}
-          required={field.isRequired}
-          onChange={(event) =>
-            onChange(field.name, event.target.value)
-          }
-          className={`${inputClass} h-11`}
-        >
-          <option value="">
-            {field.placeholder || "Select an option"}
-          </option>
+    return {
+      minLength:
+        typeof validation.minLength === "number"
+          ? validation.minLength
+          : undefined,
 
-          {[...(field.options ?? [])]
-            .sort((a, b) => a.displayOrder - b.displayOrder)
-            .map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-        </select>
-      );
-    }
-
-    if (field.type === "radio") {
-      return (
-        <div className="flex min-h-11 flex-wrap items-center gap-x-5 gap-y-3">
-          {[...(field.options ?? [])]
-            .sort((a, b) => a.displayOrder - b.displayOrder)
-            .map((option) => (
-              <label
-                key={option.value}
-                className="flex cursor-pointer items-center gap-2 text-sm text-gray-700"
-              >
-                <input
-                  type="radio"
-                  name={field.name}
-                  value={option.value}
-                  checked={value === option.value}
-                  required={field.isRequired}
-                  onChange={(event) =>
-                    onChange(field.name, event.target.value)
-                  }
-                  className="h-4 w-4 accent-blue-600"
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-        </div>
-      );
-    }
-
-    if (field.type === "checkbox") {
-      return (
-        <label className="flex min-h-11 cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={Boolean(value)}
-            onChange={(event) =>
-              onChange(field.name, event.target.checked)
-            }
-            className="h-4 w-4 rounded accent-blue-600"
-          />
-          <span className="text-sm text-gray-700">
-            {field.placeholder || field.label}
-          </span>
-        </label>
-      );
-    }
-
-    return (
-      <input
-        type={field.type}
-        value={String(value)}
-        placeholder={field.placeholder}
-        required={field.isRequired}
-        onChange={(event) => {
-          const inputValue = event.target.value;
-
-          if (field.type === "number") {
-            onChange(
-              field.name,
-              inputValue === "" ? "" : Number(inputValue),
-            );
-            return;
-          }
-
-          onChange(field.name, inputValue);
-        }}
-        className={`${inputClass} h-11`}
-      />
-    );
+      maxLength:
+        typeof validation.maxLength === "number"
+          ? validation.maxLength
+          : undefined,
+    };
   };
 
-  // Technology table - uses backend vehicleVariants
+  // Reusable input value conversion
+  const getInputValue = (
+    field: Field,
+    inputValue: string
+  ): string | number => {
+    if (field.type === "number") {
+      return inputValue === "" ? "" : Number(inputValue);
+    }
+
+    return inputValue;
+  };
+
+  // Normal field rendering
+  const renderField = (field: Field) => {
+  const value = values[field.name] ?? "";
+  const validationProps = getValidationProps(field);
+  const placeholder = getFieldPlaceholder(field, field.name);
+
+  if (field.type === "textarea") {
+    return (
+      <textarea
+        value={String(value)}
+        placeholder={placeholder}
+        required={field.isRequired}
+        {...validationProps}
+        onChange={(event) => {
+          onChange(field.name, event.target.value);
+        }}
+        className={getFieldClass(
+          field.name,
+          "min-h-28 resize-y"
+        )}
+      />
+    );
+  }
+
+  if (field.type === "dropdown" || field.type === "select") {
+    return (
+      <select
+        value={String(value)}
+        required={field.isRequired}
+        onChange={(event) => {
+          onChange(field.name, event.target.value);
+        }}
+        className={getFieldClass(field.name, "h-11")}
+      >
+        <option value="">
+          {placeholder || "Select an option"}
+        </option>
+
+        {[...(field.options ?? [])]
+          .sort((a, b) => a.displayOrder - b.displayOrder)
+          .map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+      </select>
+    );
+  }
+
+  if (field.type === "radio") {
+    return (
+      <div
+        className={`flex min-h-11 flex-wrap items-center gap-x-5 gap-y-3 ${
+          fieldErrors[field.name] ? "rounded-lg border border-red-500 p-2" : ""
+        }`}
+      >
+        {[...(field.options ?? [])]
+          .sort((a, b) => a.displayOrder - b.displayOrder)
+          .map((option) => (
+            <label
+              key={option.value}
+              className="flex cursor-pointer items-center gap-2 text-sm text-gray-700"
+            >
+              <input
+                type="radio"
+                name={field.name}
+                value={option.value}
+                checked={value === option.value}
+                required={field.isRequired}
+                onChange={(event) =>
+                  onChange(field.name, event.target.value)
+                }
+                className="h-4 w-4 accent-blue-600"
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+      </div>
+    );
+  }
+
+  if (field.type === "checkbox") {
+    return (
+      <label
+        className={`flex min-h-11 cursor-pointer items-center gap-2 ${
+          fieldErrors[field.name] ? "rounded-lg border border-red-500 p-2" : ""
+        }`}
+      >
+        <input
+          type="checkbox"
+          checked={Boolean(value)}
+          onChange={(event) =>
+            onChange(field.name, event.target.checked)
+          }
+          className="h-4 w-4 rounded accent-blue-600"
+        />
+
+        <span className="text-sm text-gray-700">
+          {fieldErrors[field.name] ||
+            field.placeholder ||
+            field.label}
+        </span>
+      </label>
+    );
+  }
+
+  return (
+    <input
+      type={field.type}
+      value={String(value)}
+      placeholder={placeholder}
+      required={field.isRequired}
+      {...validationProps}
+      onChange={(event) =>
+        onChange(
+          field.name,
+          getInputValue(field, event.target.value)
+        )
+      }
+      className={getFieldClass(field.name, "h-11")}
+    />
+  );
+};
+
+  // Reusable variant input rendering
+  const renderVariantField = (
+  field: Field,
+  fieldName: string
+) => {
+  const value = values[fieldName] ?? "";
+  const validationProps = getValidationProps(field);
+  const placeholder = getFieldPlaceholder(field, fieldName);
+
+  if (field.type === "textarea") {
+    return (
+      <textarea
+        value={String(value)}
+        placeholder={placeholder}
+        required={field.isRequired}
+        {...validationProps}
+        onChange={(event) =>
+          onChange(fieldName, event.target.value)
+        }
+        className={getFieldClass(fieldName, "min-h-20")}
+      />
+    );
+  }
+
+  if (field.type === "dropdown" || field.type === "select") {
+    return (
+      <select
+        value={String(value)}
+        required={field.isRequired}
+        onChange={(event) =>
+          onChange(fieldName, event.target.value)
+        }
+        className={getFieldClass(fieldName, "h-11")}
+      >
+        <option value="">
+          {placeholder || "Select"}
+        </option>
+
+        {[...(field.options ?? [])]
+          .sort((a, b) => a.displayOrder - b.displayOrder)
+          .map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+      </select>
+    );
+  }
+
+  return (
+    <input
+      type={field.type}
+      value={String(value)}
+      placeholder={placeholder}
+      required={field.isRequired}
+      {...validationProps}
+      onChange={(event) =>
+        onChange(
+          fieldName,
+          getInputValue(field, event.target.value)
+        )
+      }
+      className={getFieldClass(fieldName, "h-11")}
+    />
+  );
+};
+
+  // Technology table - backend vehicle variants
   const renderTechnologyTable = () => {
     if (technologyFields.length === 0) return null;
 
@@ -275,7 +397,6 @@ const FormFields = ({
           <thead>
             <tr className="bg-gray-100">
               <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">
-                
               </th>
 
               {technologyVariants.map((variant) => (
@@ -302,71 +423,13 @@ const FormFields = ({
 
                 {technologyVariants.map((variant) => {
                   const fieldName = `${field.name}_${variant.id}`;
-                  const variantValue = values[fieldName] ?? "";
 
                   return (
                     <td
                       key={variant.id}
                       className="border border-gray-300 px-3 py-3"
                     >
-                      {field.type === "textarea" ? (
-                        <textarea
-                          value={String(variantValue)}
-                          placeholder={field.placeholder}
-                          required={field.isRequired}
-                          onChange={(event) =>
-                            onChange(fieldName, event.target.value)
-                          }
-                          className={`${inputClass} min-h-20`}
-                        />
-                      ) : field.type === "dropdown" ? (
-                        <select
-                          value={String(variantValue)}
-                          required={field.isRequired}
-                          onChange={(event) =>
-                            onChange(fieldName, event.target.value)
-                          }
-                          className={`${inputClass} h-11`}
-                        >
-                          <option value="">
-                            {field.placeholder || "Select"}
-                          </option>
-
-                          {[...(field.options ?? [])]
-                            .sort(
-                              (a, b) =>
-                                a.displayOrder - b.displayOrder,
-                            )
-                            .map((option) => (
-                              <option
-                                key={option.value}
-                                value={option.value}
-                              >
-                                {option.label}
-                              </option>
-                            ))}
-                        </select>
-                      ) : (
-                        <input
-                          type={field.type}
-                          value={String(variantValue)}
-                          placeholder={field.placeholder}
-                          required={field.isRequired}
-                          onChange={(event) => {
-                            const inputValue = event.target.value;
-
-                            onChange(
-                              fieldName,
-                              field.type === "number"
-                                ? inputValue === ""
-                                  ? ""
-                                  : Number(inputValue)
-                                : inputValue,
-                            );
-                          }}
-                          className={`${inputClass} h-11`}
-                        />
-                      )}
+                      {renderVariantField(field, fieldName)}
                     </td>
                   );
                 })}
@@ -378,7 +441,7 @@ const FormFields = ({
     );
   };
 
-  // Weighment table - uses backend wdVariants
+  // Weighment table - backend wdVariants
   const renderWeighmentTable = () => {
     if (weighmentFields.length === 0) return null;
 
@@ -436,44 +499,13 @@ const FormFields = ({
 
                 {weighmentVariants.map((variant) => {
                   const fieldName = `${field.name}_${variant.id}`;
-                  const variantValue = values[fieldName] ?? "";
 
                   return (
                     <td
                       key={variant.id}
                       className="border border-gray-300 px-3 py-3"
                     >
-                      {field.type === "textarea" ? (
-                        <textarea
-                          value={String(variantValue)}
-                          placeholder={field.placeholder}
-                          required={field.isRequired}
-                          onChange={(event) =>
-                            onChange(fieldName, event.target.value)
-                          }
-                          className={`${inputClass} min-h-20`}
-                        />
-                      ) : (
-                        <input
-                          type={field.type}
-                          value={String(variantValue)}
-                          placeholder={field.placeholder}
-                          required={field.isRequired}
-                          onChange={(event) => {
-                            const inputValue = event.target.value;
-
-                            onChange(
-                              fieldName,
-                              field.type === "number"
-                                ? inputValue === ""
-                                  ? ""
-                                  : Number(inputValue)
-                                : inputValue,
-                            );
-                          }}
-                          className={`${inputClass} h-11`}
-                        />
-                      )}
+                      {renderVariantField(field, fieldName)}
                     </td>
                   );
                 })}
@@ -501,7 +533,9 @@ const FormFields = ({
           <Fragment key={field.id}>
             <div
               className={
-                field.type === "textarea" ? "md:col-span-2" : ""
+                field.type === "textarea"
+                  ? "md:col-span-2"
+                  : ""
               }
             >
               <div className="mb-2 flex items-center gap-2">
@@ -582,17 +616,21 @@ const FormFields = ({
 
             <div className="flex max-h-[65vh] flex-col items-center gap-3 overflow-y-auto p-2">
               {selectedImages.map((image, index) => (
-  <img
-    key={`${image}-${index}`}
-    src={getInfoImageUrl(image)}
-    alt={`Reference ${index + 1}`}
-    onError={(e) => {
-      console.error("Failed to load info image:", getInfoImageUrl(image));
-      e.currentTarget.style.display = "none";
-    }}
-    className="max-h-[60vh] max-w-full rounded-md object-contain"
-  />
-))}
+                <img
+                  key={`${image}-${index}`}
+                  src={getInfoImageUrl(image)}
+                  alt={`Reference ${index + 1}`}
+                  onError={(event) => {
+                    console.error(
+                      "Failed to load info image:",
+                      getInfoImageUrl(image)
+                    );
+
+                    event.currentTarget.style.display = "none";
+                  }}
+                  className="max-h-[60vh] max-w-full rounded-md object-contain"
+                />
+              ))}
             </div>
           </div>
         </div>
