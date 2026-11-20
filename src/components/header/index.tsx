@@ -889,7 +889,7 @@ console.log("==================================");
     color='#000'
     _hover={{ bg: '#7FBD2C' }}
   >
-    <Link to={vehicleType === "Bus" ? "/BusHomologation" : "/Dashboard"}>
+    <Link to={vehicleType === "Bus" ? "/BusDashboard" : "/Dashboard"}>
       Homologation
     </Link>
   </Button>
