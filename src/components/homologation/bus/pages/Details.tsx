@@ -96,6 +96,7 @@ type Field = {
     | "checkbox"
     | "textarea";
   placeholder: string;
+  suggestionFrom?: string;
   isRequired: boolean;
   displayOrder: number;
   options: FieldOption[];
@@ -251,6 +252,7 @@ const Details = ({
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
 
+
   // Backend variants
   const [variants, setVariants] = useState<Variant[]>([]);
   const [wdVariants, setWdVariants] = useState<Variant[]>([]);
@@ -261,6 +263,8 @@ const Details = ({
 
   const [selectedCategory, setSelectedCategory] = useState(0);
   const [selectedSubCategory, setSelectedSubCategory] = useState(0);
+  const [subCategoryCategoryMap, setSubCategoryCategoryMap] =
+  useState<Record<string, string>>({});
 
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingSubCategories, setLoadingSubCategories] = useState(false);
@@ -280,6 +284,41 @@ const Details = ({
 
   const currentCategory = categories[selectedCategory];
   const currentSubCategory = subCategories[selectedSubCategory];
+  // Suggestions from Manufacturer Details
+const manufacturerSuggestions: Record<string, FormFieldValue> = {};
+
+const manufacturerCategory = categories.find(
+  (category) =>
+    category.name.trim().toLowerCase() ===
+    "manufacturer details"
+);
+
+if (
+  currentCategory?.name.trim().toLowerCase() ===
+    "manufacturer plant details" &&
+  manufacturerCategory
+) {
+  Object.entries(formValues).forEach(
+    ([subCategoryId, subCategoryValues]) => {
+      const sourceCategoryId =
+        subCategoryCategoryMap[subCategoryId];
+
+      if (sourceCategoryId === manufacturerCategory.id) {
+        Object.entries(subCategoryValues).forEach(
+          ([fieldName, fieldValue]) => {
+            if (
+              fieldValue !== "" &&
+              fieldValue !== null &&
+              fieldValue !== undefined
+            ) {
+              manufacturerSuggestions[fieldName] = fieldValue;
+            }
+          }
+        );
+      }
+    }
+  );
+}
 
   const technologyFieldNames = [
     "regenerativeBraking",
@@ -541,7 +580,18 @@ const Details = ({
         if (cancelled) return;
 
         setSubCategories(fetchedSubCategories);
-        setSelectedSubCategory(0);
+
+setSubCategoryCategoryMap((previous) => ({
+  ...previous,
+  ...Object.fromEntries(
+    fetchedSubCategories.map((subCategory) => [
+      subCategory.id,
+      subCategory.categoryId,
+    ])
+  ),
+}));
+
+setSelectedSubCategory(0);
       } catch (err) {
         if (cancelled) return;
 
@@ -1284,17 +1334,18 @@ if (savedData && typeof savedData === "object") {
               ) : fields.length > 0 ? (
                 <div className="min-w-0">
                   <FormFields
-                    fields={fields}
-                    variantconfig={variants}
-                    wdVariants={wdVariants}
-                    values={
-                      currentSubCategory
-                        ? formValues[currentSubCategory.id] || {}
-                        : {}
-                    }
-                    onChange={handleFieldChange}
-                     fieldErrors={fieldErrors}
-                  />
+  fields={fields}
+  variantconfig={variants}
+  wdVariants={wdVariants}
+  values={
+    currentSubCategory
+      ? formValues[currentSubCategory.id] || {}
+      : {}
+  }
+  suggestions={manufacturerSuggestions}
+  onChange={handleFieldChange}
+  fieldErrors={fieldErrors}
+/>
                 </div>
               ) : (
                 <div className="py-8 text-sm text-slate-500">

@@ -13,6 +13,11 @@ import {
   FileText,
   Bell,
   Settings,
+  Building,
+  Warehouse,
+  Disc3,
+  Cog,
+  Construction,
 } from "lucide-react";
 
 type Category = {
@@ -30,13 +35,14 @@ type SidebarProps = {
 };
 
 const getCategoryIcon = (name: string) => {
-  const value = name.toLowerCase();
+  const value = name.trim().toLowerCase();
 
-  if (value.includes("manufacturer details")) return Building2;
-  if (value.includes("plant")) return Factory;
+  if (value.includes("plant")) return Construction;
+  if (value.includes("manufacturer")) return Building2;
   if (value.includes("vehicle")) return Bus;
   if (value.includes("weighment")) return Weight;
-  if (value.includes("tyre") || value.includes("wheel")) return CircleGauge;
+  if (value.includes("tyre")) return Disc3;
+  if (value.includes("wheel rim")) return Cog;
 
   return FileText;
 };
