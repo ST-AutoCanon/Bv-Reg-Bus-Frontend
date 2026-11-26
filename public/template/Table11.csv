@@ -1,0 +1,45 @@
+index	clause_no_as_printed	description_as_in_document	suggested_field_key	section	value	base	variant1	variant2
+1		Name & Address of the Vehicle Manufacturer	vehicleManufacturerNameAndAddress	Vehicle and chassis details				
+2		Name of the basic model :	basicModelName	Vehicle and chassis details				
+3		Name of Variants, if any :	variantNames	Vehicle and chassis details				
+4		Place of Embossing or etching the Chassis Number (Vehicle Identification Number). Supporting details by drawing or pictures may be provided if necessary.	chassisNumberEmbossingLocation	Vehicle and chassis details				
+5		Place of PIN Verification plate. Supporting details by drawing or pictures may be provided if necessary	pinVerificationPlateLocation	Vehicle and chassis details				
+6		Place of Local information (Importer Plate)- if machine imported. Supporting details by drawing or pictures may be provided if necessary	localInformationImporterPlateLocation	Vehicle and chassis details				
+7		Code for month and year of production:	productionMonthAndYearCode	Production code				
+8		Code for month of production:	productionMonthCode	Production code				
+9		Code for year of production:	productionYearCode	Production code				
+10		Month	productionMonthLabel	Month code table	Month			
+11		Code	productionMonthCodeValue	Month code table				
+12		January	januaryMonthCode	Month code table				
+13		February	februaryMonthCode	Month code table				
+14		March	marchMonthCode	Month code table				
+15		April	aprilMonthCode	Month code table				
+16		May	mayMonthCode	Month code table				
+17		June	juneMonthCode	Month code table				
+18		July	julyMonthCode	Month code table				
+19		August	augustMonthCode	Month code table				
+20		September	septemberMonthCode	Month code table				
+21		October	octoberMonthCode	Month code table				
+22		November	novemberMonthCode	Month code table				
+23		December	decemberMonthCode	Month code table				
+24		Year	productionYearLabel	Year code table	Year			
+25		Code	productionYearCodeValue	Year code table				
+26		Position of the code for month of production in the Chassis number :	monthCodePositionInChassisNumber	Chassis number details				
+27		Position of the code for year of production in the Chassis number :	yearCodePositionInChassisNumber	Chassis number details				
+28		Height of the Chassis number (Vehicle Identification Number) :	chassisNumberHeight	Chassis number details				
+29		Example of Engine/Motor No.: -	exampleEngineOrMotorNumber	Examples				
+30		Example of Chassis No. (Vehicle Identification Number) with Month & Year of Manufacture: -	exampleChassisNumberWithManufactureMonthYear	Examples				
+31		Manufacturer	manufacturer	Footer - Page 1				
+32		Sheet No :	sheetNumber	Footer - Page 1				
+33		Test Agency :	testAgency	Footer - Page 1				
+34		Document No:	documentNumber	Footer - Page 1				
+35		Name:	signatoryName	Footer - Page 1				
+36		Date :	signatureDate	Footer - Page 1				
+37		Designation :	signatoryDesignation	Footer - Page 1				
+38		Manufacturer	manufacturer	Footer - Page 2				
+39		Sheet No :	sheetNumber	Footer - Page 2				
+40		Test Agency :	testAgency	Footer - Page 2				
+41		Document No:	documentNumber	Footer - Page 2				
+42		Name:	signatoryName	Footer - Page 2				
+43		Date :	signatureDate	Footer - Page 2				
+44		Designation :	signatoryDesignation	Footer - Page 2				

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import NewRequest from "./NewRequest";
 import TableDocuments from "../components/TableDocuments";
 import { EditIcon } from "@chakra-ui/icons";
+import BusDocumentCards from
+  "../components/BusDocumentCards";
 
 interface RequestInfo {
   vehicleType?: string;
@@ -71,6 +73,7 @@ const getStoredToken = (): string | null => {
   return localStorage.getItem("token")?.trim() || null;
 };
 
+
 const getErrorMessage = (
   data: ApiResponse<unknown>,
   fallback: string,
@@ -114,6 +117,10 @@ const Dashboard = () => {
   const [documentsRefreshKey, setDocumentsRefreshKey] = useState(0);
 
   const [error, setError] = useState("");
+  const selectedSubmission =
+  submissions.find(
+    (item) => item._id === selectedRequestId
+  ) ?? null;
 
   // Fetch existing submissions
   const fetchSubmissions = useCallback(async () => {
@@ -816,17 +823,21 @@ setSubmissions(result);
 
         {/* Existing Documents Component */}
 
-        {editingSubmissionId && (
-          <section
-            style={{ marginTop: "32px" }}
-            key={editingSubmissionId}
-          >
-            <TableDocuments
-              submissionId={editingSubmissionId}
-              refreshKey={documentsRefreshKey}
-            />
-          </section>
-        )}
+        {/* Bus Document Cards */}
+
+{selectedSubmission && (
+  <section
+    style={{
+      marginTop: "40px",
+      width: "100%",
+    }}
+    key={selectedSubmission._id}
+  >
+    <BusDocumentCards
+      submissionId={selectedSubmission._id}
+    />
+  </section>
+)}
       </main>
 
       {/* New Request Modal */}

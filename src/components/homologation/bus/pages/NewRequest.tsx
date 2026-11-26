@@ -1,5 +1,5 @@
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import ApproveSuccess from "../../../Auth/approveSuccess";
 
 interface RequestInfo {
@@ -184,6 +184,20 @@ const NewRequest = ({
   const [serverError, setServerError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdRequestId, setCreatedRequestId] = useState("");
+  const [vehicleImage, setVehicleImage] = useState<File | null>(null);
+const [imagePreview, setImagePreview] = useState("");
+
+useEffect(() => {
+  if (!vehicleImage) {
+    setImagePreview("");
+    return;
+  }
+
+  const previewUrl = URL.createObjectURL(vehicleImage);
+  setImagePreview(previewUrl);
+
+  return () => URL.revokeObjectURL(previewUrl);
+}, [vehicleImage]);
 
   // Handle field changes
   const handleChange = (
@@ -295,20 +309,25 @@ const NewRequest = ({
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `${API_URL}/bus/submissions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            requestInfo: formData,
-          }),
-        }
-      );
+      const uploadData = new FormData();
+
+uploadData.append("requestInfo", JSON.stringify(formData));
+
+if (vehicleImage) {
+  uploadData.append("vehicleImage", vehicleImage);
+}
+
+const response = await fetch(
+  `${API_URL}/bus/submissions`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+    body: uploadData,
+  }
+);
 
       const responseText = await response.text();
 
@@ -628,6 +647,101 @@ const NewRequest = ({
 
                   {renderError("preferredTestingAgency")}
                 </div>
+
+                {/* Vehicle Image Upload - Optional */}
+
+{/* Vehicle Image Upload - Optional */}
+<div className="min-w-0">
+  <label
+    htmlFor="vehicleImage"
+    className={labelClass}
+  >
+    Upload Vehicle Image (Optional)
+  </label>
+
+  <div
+    className="flex min-h-[44px] w-full items-center gap-3 rounded-[7px] border border-[#d6d6d6] bg-white px-4 py-2 transition focus-within:ring-2 focus-within:ring-blue-100"
+  >
+    <label
+      htmlFor="vehicleImage"
+      className="inline-flex h-[30px] shrink-0 cursor-pointer items-center justify-center rounded-[5px] bg-[#00677c] px-4 text-sm font-medium text-white transition hover:bg-[#005466]"
+    >
+      Choose Image
+    </label>
+
+    <input
+      id="vehicleImage"
+      type="file"
+      accept="image/*"
+      disabled={loading}
+      onChange={(event) => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+          setVehicleImage(null);
+          return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+          setServerError("Please select a valid image file.");
+          event.target.value = "";
+          return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+          setServerError("Image size must be less than 5 MB.");
+          event.target.value = "";
+          return;
+        }
+
+        setServerError("");
+        setVehicleImage(file);
+      }}
+      className="hidden"
+    />
+
+    <span className="min-w-0 flex-1 truncate text-sm text-[#555555]">
+      {vehicleImage ? vehicleImage.name : "No image selected"}
+    </span>
+
+    {vehicleImage && (
+      <button
+        type="button"
+        disabled={loading}
+        onClick={() => {
+          setVehicleImage(null);
+          const input = document.getElementById(
+            "vehicleImage"
+          ) as HTMLInputElement | null;
+
+          if (input) input.value = "";
+        }}
+        className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
+      >
+        Remove
+      </button>
+    )}
+  </div>
+
+  <p className="mt-2 text-xs text-[#777777]">
+    Accepted formats: JPG, JPEG, PNG. Maximum size: 5 MB.
+  </p>
+
+  {imagePreview && (
+    <div className="mt-4">
+      <p className="mb-2 text-sm font-medium text-[#172b46]">
+        Image Preview
+      </p>
+
+      <img
+        src={imagePreview}
+        alt="Vehicle preview"
+        className="h-40 w-full max-w-[280px] rounded-[7px] border border-[#d6d6d6] bg-white object-contain p-1"
+      />
+    </div>
+  )}
+</div>
+
 
               </div>
 
