@@ -37,7 +37,7 @@ type SidebarProps = {
 const getCategoryIcon = (name: string) => {
   const value = name.trim().toLowerCase();
 
-  if (value.includes("plant")) return Construction;
+  if (value.includes("plant")) return Factory;
   if (value.includes("manufacturer")) return Building2;
   if (value.includes("vehicle")) return Bus;
   if (value.includes("weighment")) return Weight;
@@ -74,7 +74,7 @@ const Sidebar = ({
       className={`
     flex h-full min-h-0 shrink-0 flex-col
     overflow-x-hidden overflow-y-auto
-    bg-[#075441]
+    bg-[#174B70]
     border-r border-white/10
     transition-all duration-300 ease-in-out
     ${collapsed ? "w-[76px]" : "w-[300px]"}
@@ -95,9 +95,9 @@ const Sidebar = ({
   ${collapsed ? "justify-center px-0" : "gap-4 px-6"}
   py-3 text-left text-sm font-medium
   transition-colors duration-200
-  ${isSelected
-                  ? "bg-[#087054] text-white"
-                  : "bg-transparent text-white hover:bg-[#086047]"
+ ${isSelected
+                  ? "bg-[#205F8F] text-white"
+                  : "bg-transparent text-white hover:bg-[#23658F]"
                 }
 `}
             >

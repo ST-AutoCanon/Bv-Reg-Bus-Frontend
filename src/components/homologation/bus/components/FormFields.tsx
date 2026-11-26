@@ -27,8 +27,11 @@ type Field = {
   | "select"
   | "radio"
   | "checkbox"
-  | "textarea";
+  | "textarea"
+  | "heading"
+  | "subheading";
   placeholder?: string;
+  prefix?: string;
   suggestionFrom?: string;
   infoImages?: string[];
   isRequired: boolean;
@@ -147,27 +150,7 @@ const FormFields = ({
 
 
   const getFieldValue = (field: Field) => {
-    const currentValue = values[field.name];
-
-    // Do not show suggestions again after user edits or clears the field
-    if (editedFields.includes(field.name)) {
-      return currentValue ?? "";
-    }
-
-    // Show the existing value if it is not empty
-    if (
-      currentValue !== undefined &&
-      currentValue !== null &&
-      currentValue !== ""
-    ) {
-      return currentValue;
-    }
-
-    // Otherwise, get the suggestion
-    const suggestionKey = field.suggestionFrom || field.name;
-    const suggestedValue = suggestions[suggestionKey];
-
-    return suggestedValue ?? currentValue ?? "";
+    return values[field.name] ?? "";
   };
 
 
@@ -208,32 +191,64 @@ const FormFields = ({
   // Normal field rendering
   const renderField = (field: Field) => {
     const value = getFieldValue(field);
+
+    // Main heading
+    if (field.type === "heading") {
+      return (
+        <div className="col-span-full mb-2">
+          <h3 className="text-lg font-bold text-gray-800">
+            {field.label}
+          </h3>
+        </div>
+      );
+    }
+
+    // Subheading
+    if (field.type === "subheading") {
+      return (
+        <div className="col-span-full mb-1">
+          <h4 className="text-base font-semibold text-gray-700">
+            {field.label}
+          </h4>
+        </div>
+      );
+    }
     const validationProps = getValidationProps(field);
     const placeholder = fieldErrors[field.name] || field.placeholder || "";
     if (field.type === "textarea") {
       return (
-        <textarea
-          value={String(value)}
-          placeholder={placeholder}
-          required={field.isRequired}
-          {...validationProps}
-          onChange={(event) => {
-            setEditedFields((prev) =>
-              prev.includes(field.name)
-                ? prev
-                : [...prev, field.name]
-            );
-
-            onChange(
-              field.name,
-              getInputValue(field, event.target.value)
-            );
-          }}
-          className={getFieldClass(
-            field.name,
-            "min-h-28 resize-y"
+        <div className="relative w-full">
+          {field.prefix && (
+            <span className="absolute left-3 top-3 text-sm text-gray-700">
+              {field.prefix}
+            </span>
           )}
-        />
+
+          <textarea
+            value={String(value)}
+            placeholder={placeholder}
+            required={field.isRequired}
+            {...validationProps}
+            onChange={(event) => {
+              setEditedFields((prev) =>
+                prev.includes(field.name)
+                  ? prev
+                  : [...prev, field.name]
+              );
+
+              onChange(
+                field.name,
+                getInputValue(field, event.target.value)
+              );
+            }}
+            className={getFieldClass(
+              field.name,
+              field.prefix
+                ? "min-h-28 resize-y pl-14"
+                : "min-h-28 resize-y"
+            )}
+          />
+        </div>
       );
     }
 
@@ -318,26 +333,49 @@ const FormFields = ({
     }
 
     return (
-      <input
-        type={field.type}
-        value={String(value)}
-        placeholder={placeholder}
-        required={field.isRequired}
-        {...validationProps}
-        onChange={(event) => {
-          setEditedFields((prev) =>
-            prev.includes(field.name)
-              ? prev
-              : [...prev, field.name]
-          );
+      <div className="relative w-full">
+        {field.prefix && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-700">
+            {field.prefix}
+          </span>
+        )}
 
-          onChange(
+        <input
+          type={field.type === "number" ? "text" : field.type}
+          inputMode={field.type === "number" ? "decimal" : undefined}
+          value={String(value)}
+          placeholder={placeholder}
+          required={field.isRequired}
+          {...validationProps}
+          onChange={(event) => {
+            const inputValue = event.target.value;
+
+            // Allow only digits and one decimal point
+            if (
+              field.type === "number" &&
+              inputValue !== "" &&
+              !/^\d*\.?\d*$/.test(inputValue)
+            ) {
+              return;
+            }
+
+            setEditedFields((prev) =>
+              prev.includes(field.name)
+                ? prev
+                : [...prev, field.name]
+            );
+
+            onChange(
+              field.name,
+              getInputValue(field, inputValue)
+            );
+          }}
+          className={getFieldClass(
             field.name,
-            getInputValue(field, event.target.value)
-          );
-        }}
-        className={getFieldClass(field.name, "h-11")}
-      />
+            field.prefix ? "h-11 pl-12" : "h-11"
+          )}
+        />
+      </div>
     );
   };
 
@@ -351,27 +389,31 @@ const FormFields = ({
     const placeholder = fieldErrors[field.name] || field.placeholder || "";
     if (field.type === "textarea") {
       return (
-        <textarea
-          value={String(value)}
-          placeholder={placeholder}
-          required={field.isRequired}
-          {...validationProps}
-          onChange={(event) => {
-            setEditedFields((prev) =>
-              prev.includes(field.name)
-                ? prev
-                : [...prev, field.name]
-            );
+        <div className="relative w-full">
+          <textarea
+            value={String(value ?? "")}
+            placeholder={placeholder}
+            required={field.isRequired}
+            onChange={(event) => {
+              const inputValue = event.target.value;
 
-            onChange(
-              field.name,
-              getInputValue(field, event.target.value)
-            );
-          }}
-          className={getFieldClass(fieldName, "min-h-20")}
-        />
+              setEditedFields((prev) =>
+                prev.includes(fieldName)
+                  ? prev
+                  : [...prev, fieldName]
+              );
+
+              onChange(fieldName, inputValue);
+            }}
+            className={getFieldClass(
+              fieldName,
+              "min-h-28 resize-y"
+            )}
+          />
+        </div>
       );
     }
+
 
     if (field.type === "dropdown" || field.type === "select") {
       return (
@@ -400,24 +442,39 @@ const FormFields = ({
 
     return (
       <input
-        type={field.type}
+        type={field.type === "number" ? "text" : field.type}
+        inputMode={field.type === "number" ? "decimal" : undefined}
         value={String(value)}
         placeholder={placeholder}
         required={field.isRequired}
         {...validationProps}
         onChange={(event) => {
+          const inputValue = event.target.value;
+
+          // Allow only digits and one decimal point
+          if (
+            field.type === "number" &&
+            inputValue !== "" &&
+            !/^\d*\.?\d*$/.test(inputValue)
+          ) {
+            return;
+          }
+
           setEditedFields((prev) =>
-            prev.includes(field.name)
+            prev.includes(fieldName)
               ? prev
-              : [...prev, field.name]
+              : [...prev, fieldName]
           );
 
           onChange(
-            field.name,
-            getInputValue(field, event.target.value)
+            fieldName,
+            inputValue
           );
         }}
-        className={getFieldClass(field.name, "h-11")}
+        className={getFieldClass(
+          field.name,
+          field.prefix ? "h-11 pl-12" : "h-11"
+        )}
       />
     );
   };
@@ -589,51 +646,78 @@ const FormFields = ({
           <Fragment key={field.id}>
             <div
               className={
-                field.type === "textarea"
+                field.type === "heading" ||
+                  field.type === "subheading" ||
+                  field.type === "textarea"
                   ? "md:col-span-2"
                   : ""
               }
             >
-              <div className="mb-2 flex items-center gap-2">
-                <label className="text-sm font-medium leading-5 text-gray-700">
-                  {field.label}
+              {field.type !== "heading" &&
+                field.type !== "subheading" && (
+                  <div className="mb-2 flex items-center gap-2">
+                    <label className="text-sm font-medium leading-5 text-gray-700">
+                      {field.label}
 
-                  {field.isRequired && (
-                    <span className="ml-1 text-red-500">*</span>
-                  )}
-                </label>
+                      {field.isRequired && (
+                        <span className="ml-1 text-red-500">*</span>
+                      )}
+                    </label>
 
-                {field.infoImages?.length ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedImages(field.infoImages!)
-                    }
-                  >
-                    <img
-                      src={infoIcon}
-                      alt="Info"
-                      className="h-4 w-4"
-                    />
-                  </button>
-                ) : field.placeholder ? (
-                  <span className="group relative inline-flex items-center">
-                    <img
-                      src={infoIcon}
-                      alt="Info"
-                      tabIndex={0}
-                      className="h-4 w-4 cursor-pointer"
-                    />
 
-                    <span className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-max max-w-64 -translate-x-1/2 rounded-md bg-gray-800 px-3 py-2 text-xs text-white shadow-lg group-hover:visible group-focus-within:visible">
-                      {field.placeholder}
-                    </span>
-                  </span>
-                ) : null}
-              </div>
+                    {field.infoImages?.length ? (
+                      <div className="group relative inline-flex items-center">
+                        {/* Info icon */}
+                        <img
+                          src={infoIcon}
+                          alt="Info"
+                          tabIndex={0}
+                          className="h-4 w-4 cursor-pointer"
+                        />
+
+                        {/* Image popup appears on hover */}
+                        <div
+                          className="
+        invisible opacity-0
+        group-hover:visible group-hover:opacity-100
+        group-focus-within:visible group-focus-within:opacity-100
+        absolute left-0 top-full z-[1000] mt-2
+        w-[320px] max-w-[80vw]
+        rounded-lg border border-gray-200
+        bg-white p-2 shadow-xl
+        transition-opacity duration-200
+        pointer-events-none
+      "
+                        >
+                          {field.infoImages.map((image, index) => (
+                            <img
+                              key={`${image}-${index}`}
+                              src={getInfoImageUrl(image)}
+                              alt={`Information ${index + 1}`}
+                              className="h-auto w-full rounded-md object-contain"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : field.placeholder ? (
+
+                      <span className="group relative inline-flex items-center">
+                        <img
+                          src={infoIcon}
+                          alt="Info"
+                          tabIndex={0}
+                          className="h-4 w-4 cursor-pointer"
+                        />
+
+                        <span className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-max max-w-64 -translate-x-1/2 rounded-md bg-gray-800 px-3 py-2 text-xs text-white shadow-lg group-hover:visible group-focus-within:visible">
+                          {field.placeholder}
+                        </span>
+                      </span>
+                    ) : null}
+                  </div>
+                )}
 
               {renderField(field)}
-
             </div>
           </Fragment>
         ))}
