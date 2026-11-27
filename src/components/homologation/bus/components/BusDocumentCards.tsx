@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import generateForm2 from "../../generator/form2Generator";
+import generateForm3 from "../../generator/form3Generator";
 
 interface BusDocumentCardsProps {
   submissionId: string;
@@ -22,9 +23,7 @@ const BUS_FORMS = [
   { id: "t22c", name: "T22C" },
   { id: "t22d", name: "T22D" },
 ];
-const API_URL = (
-  process.env.REACT_APP_BASE_URL || "http://localhost:3009/api"
-).replace(/\/+$/, "");
+const API_URL = (process.env.REACT_APP_BASE_URL || "").replace(/\/+$/, "");
 
 const getAuthToken = (): string => {
   try {
@@ -151,10 +150,9 @@ const BusDocumentCards: React.FC<BusDocumentCardsProps> = ({
             0,
             Math.min(100, progressByForm[form.id] ?? 0)
           );
-          const handleDownload = async (
-            form: (typeof BUS_FORMS)[number]
-          ) => {
-            if (form.id !== "form2") return;
+
+          const handleDownload = async (form: (typeof BUS_FORMS)[number]) => {
+            if (form.id !== "form2" && form.id !== "form3") return;
 
             try {
               const token = getAuthToken();
@@ -169,13 +167,12 @@ const BusDocumentCards: React.FC<BusDocumentCardsProps> = ({
                 return;
               }
 
-              console.log("STEP 1: Download clicked");
-              console.log("Submission ID:", submissionId);
+              // Select API endpoint according to the form
+              const tableNumber = form.id === "form2" ? "table2" : "table3";
+              const url = `${API_URL}/bus/${tableNumber}/${submissionId}`;
 
-              // Fetch saved Form 2 data
-              const url = `${API_URL}/bus/table2/${submissionId}`;
-
-              console.log("STEP 2: API URL:", url);
+              console.log("Downloading:", form.name);
+              console.log("API URL:", url);
 
               const response = await fetch(url, {
                 method: "GET",
@@ -185,11 +182,7 @@ const BusDocumentCards: React.FC<BusDocumentCardsProps> = ({
                 },
               });
 
-              console.log("STEP 3: API status:", response.status);
-
               const responseText = await response.text();
-
-              console.log("STEP 4: Raw API response:", responseText);
 
               let result;
 
@@ -199,44 +192,44 @@ const BusDocumentCards: React.FC<BusDocumentCardsProps> = ({
                 throw new Error("Backend returned an invalid JSON response.");
               }
 
-              console.log("STEP 5: Parsed API response:", result);
-
               if (!response.ok) {
                 throw new Error(
                   result.message || `API failed: ${response.status}`
                 );
               }
 
-              // Extract saved form values
-              const form2Data = result.data?.data;
-
-              console.log("STEP 6: Extracted Form 2 data:", form2Data);
+              const formData = result.data?.data ?? result.data;
 
               if (
-                !form2Data ||
-                typeof form2Data !== "object" ||
-                Array.isArray(form2Data)
+                !formData ||
+                typeof formData !== "object" ||
+                Array.isArray(formData)
               ) {
-                throw new Error("Form 2 data is empty or invalid.");
+                throw new Error(`${form.name} data is empty or invalid.`);
               }
 
-              // Generate DOCX only once
-              console.log("STEP 7: Generating Form 2 document");
+              console.log(`${form.name} data:`, formData);
 
-              await generateForm2(form2Data, submissionId);
+              // Generate the selected document
+              if (form.id === "form2") {
+                await generateForm2(formData, submissionId);
+              } else if (form.id === "form3") {
+                await generateForm3(formData);
+              }
 
-              console.log("STEP 8: Form 2 document generated");
+              console.log(`${form.name} download triggered`);
 
             } catch (error) {
-              console.error("Form 2 download failed:", error);
+              console.error(`${form.name} download failed:`, error);
 
               alert(
                 error instanceof Error
                   ? error.message
-                  : "Unable to generate Form 2. Please try again."
+                  : `Unable to generate ${form.name}. Please try again.`
               );
             }
           };
+
           return (
             <div
               key={form.id}
@@ -312,7 +305,7 @@ const BusDocumentCards: React.FC<BusDocumentCardsProps> = ({
 
                 <button
                   type="button"
-                  disabled={form.id !== "form2"}
+                  disabled={form.id !== "form2" && form.id !== "form3"}
                   onClick={() => void handleDownload(form)}
                   title={
                     form.id === "form2"
@@ -327,10 +320,16 @@ const BusDocumentCards: React.FC<BusDocumentCardsProps> = ({
                     height: "34px",
                     borderRadius: "50%",
                     border: "3px solid white",
-                    backgroundColor: form.id === "form2" ? "#f47721" : "#cccccc",
+                    backgroundColor:
+                      form.id === "form2" || form.id === "form3"
+                        ? "#f47721"
+                        : "#cccccc",
                     color: "#ffffff",
                     fontSize: "19px",
-                    cursor: form.id === "form2" ? "pointer" : "not-allowed",
+                    cursor:
+                      form.id === "form2" || form.id === "form3"
+                        ? "pointer"
+                        : "not-allowed",
                   }}
                 >
                   ↓

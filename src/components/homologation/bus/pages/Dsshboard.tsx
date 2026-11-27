@@ -457,7 +457,6 @@ setSubmissions(result);
                   { label: "Request", width: "18%" },
                   { label: "Vehicle", width: "15%" },
                   { label: "Category", width: "12%" },
-                  { label: "Status", width: "11%" },
                   { label: "Created", width: "13%" },
                   { label: "Updated", width: "13%" },
                   { label: "Action", width: "12%" },
@@ -485,7 +484,7 @@ setSubmissions(result);
               {submissionsLoading ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={7}
                     style={{
                       padding: "45px",
                       textAlign: "center",
@@ -525,8 +524,7 @@ setSubmissions(result);
                   const isSelected =
                     editingSubmissionId === submission._id;
 
-                  const isCompleted =
-                    submission.status === "completed";
+                  
 
                   return (
                     <tr
@@ -638,32 +636,7 @@ setSubmissions(result);
                         {submission.requestInfo?.category || "-"}
                       </td>
 
-                      {/* Status */}
-
-                      <td
-                        style={{
-                          padding: "14px 10px",
-                          textAlign: "center",
-                        }}
-                      >
-                        <span
-                          style={{
-                            display: "inline-block",
-                            padding: "6px 12px",
-                            borderRadius: "20px",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            backgroundColor: isCompleted
-                              ? "#e4f5d0"
-                              : "#f1f1f1",
-                            color: isCompleted
-                              ? "#477d16"
-                              : "#64748b",
-                          }}
-                        >
-                          {isCompleted ? "Completed" : "Draft"}
-                        </span>
-                      </td>
+                      
 
                       {/* Created */}
 
