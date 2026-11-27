@@ -28,10 +28,26 @@ interface User {
 interface RegisteredUserDetails {
   firstName?: string;
   lastName?: string;
+  name?: string;
+  fullName?: string;
+  contactPerson?: string;
+
   email?: string;
   emailId?: string;
+  emailAddress?: string;
+
   contact?: string;
+  contactNumber?: string;
+  telephone?: string;
+  telephoneNo?: string;
+  telephoneno?: string;
+  phone?: string;
+  phoneNumber?: string;
+  mobile?: string;
+  mobileNumber?: string;
   alternateContact?: string;
+
+  [key: string]: unknown;
 }
 
 interface ApiResponse<T> {
@@ -243,6 +259,101 @@ const readApiResponse = async <T,>(
   return data;
 };
 
+const normalizeFieldName = (value: string): string =>
+  value.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+
+const getRegisteredValue = (
+  field: Field,
+  details: RegisteredUserDetails | null,
+): string | undefined => {
+  if (!details) return undefined;
+
+  const aliases: Record<string, string[]> = {
+    email: [
+      "email",
+      "emailId",
+      "emailAddress",
+    ],
+
+    telephone: [
+      "contact",
+      "contactNumber",
+      "telephone",
+      "telephoneNo",
+      "telephoneno",
+      "phone",
+      "phoneNumber",
+      "mobile",
+      "mobileNumber",
+    ],
+
+    contactperson: [
+      "contactPerson",
+      "contactPersonName",
+      "fullName",
+    ],
+  };
+
+  const aliasLookup: Record<string, string> = {};
+
+  Object.entries(aliases).forEach(([group, names]) => {
+    names.forEach((name) => {
+      aliasLookup[normalizeFieldName(name)] = group;
+    });
+  });
+
+  // suggestionFrom takes priority over the field's own name.
+  const sourceName = field.suggestionFrom || field.name;
+
+  const normalizedSource = normalizeFieldName(sourceName);
+  const normalizedField = normalizeFieldName(field.name);
+
+  const group =
+    aliasLookup[normalizedSource] ||
+    aliasLookup[normalizedField];
+
+  if (!group) return undefined;
+
+  // Contact person
+  if (group === "contactperson") {
+    const directValue =
+      details.contactPerson ||
+      details.contactPersonName ||
+      details.fullName;
+
+    if (directValue) return String(directValue);
+
+    const fullName = [
+      details.firstName,
+      details.lastName,
+    ]
+      .filter(
+        (value) =>
+          typeof value === "string" && value.trim(),
+      )
+      .join(" ");
+
+    return fullName || undefined;
+  }
+
+  // Email and telephone
+  const possibleNames = aliases[group] || [];
+
+  for (const propertyName of possibleNames) {
+    const value = details[propertyName];
+
+    if (
+      value !== undefined &&
+      value !== null &&
+      String(value).trim() !== ""
+    ) {
+      return String(value).trim();
+    }
+  }
+
+  return undefined;
+};
+
 /*
 |--------------------------------------------------------------------------
 | COMPONENT
@@ -423,10 +534,16 @@ const Details = ({
         if (cancelled) return;
 
         setSubmission(loadedSubmission);
-        setFormValues({});
-        setFieldErrors({});
+
+        setFormValues(
+          loadedSubmission.values &&
+            typeof loadedSubmission.values === "object"
+            ? loadedSubmission.values
+            : {},
+        );
       } catch (err) {
         if (cancelled) return;
+
 
         console.error("[Details] Load submission error:", err);
 
@@ -482,8 +599,45 @@ const Details = ({
 
         if (cancelled) return;
 
-        if (result.status === "success" && result.body) {
-          setRegisteredUserDetails(result.body);
+        // Support different API response structures.
+        const rawDetails =
+          result.body ??
+          result.data ??
+          result.user;
+
+        if (
+          !rawDetails ||
+          typeof rawDetails !== "object"
+        ) {
+          console.error(
+            "[Details] Registration details missing:",
+            result
+          );
+          return;
+        }
+
+        const responseObject =
+          rawDetails as Record<string, unknown>;
+
+        const actualDetails =
+          responseObject.registeredUserDetails ??
+          responseObject.userDetails ??
+          responseObject.registrationDetails ??
+          responseObject.user ??
+          rawDetails;
+
+        if (
+          actualDetails &&
+          typeof actualDetails === "object"
+        ) {
+          console.log(
+            "[REGISTERED USER DETAILS]",
+            actualDetails
+          );
+
+          setRegisteredUserDetails(
+            actualDetails as RegisteredUserDetails
+          );
         }
       } catch (error) {
         if (cancelled) return;
@@ -851,18 +1005,38 @@ const Details = ({
     const subCategoryId = currentSubCategory.id;
 
     setFormValues((previous) => {
-      const existingValues = previous[subCategoryId] || {};
-      const updatedValues = { ...existingValues };
+      const existingValues =
+        previous[subCategoryId] || {};
+
+      const updatedValues = {
+        ...existingValues,
+      };
 
       fields.forEach((field) => {
-        const registeredValue = getRegisteredValue(field);
+        const registeredValue = getRegisteredValue(
+          field,
+          registeredUserDetails
+        );
 
-        // Only fill empty fields. Do not overwrite user-entered values.
+        // Do not overwrite values already entered by the user.
+        const currentValue = updatedValues[field.name];
+
         if (
-          registeredValue &&
-          !String(updatedValues[field.name] ?? "").trim()
+          registeredValue !== undefined &&
+          (
+            currentValue === undefined ||
+            currentValue === null ||
+            String(currentValue).trim() === ""
+          )
         ) {
           updatedValues[field.name] = registeredValue;
+
+          console.log("[AUTO-FILL]", {
+            subCategory: currentSubCategory.code,
+            field: field.name,
+            source: field.suggestionFrom || field.name,
+            value: registeredValue,
+          });
         }
       });
 
@@ -879,32 +1053,7 @@ const Details = ({
     loadingFields,
   ]);
 
-  const getRegisteredValue = (field: Field): string | undefined => {
-    if (!registeredUserDetails) return undefined;
 
-    switch (field.name) {
-      case "contactPerson":
-        return [
-          registeredUserDetails.firstName,
-          registeredUserDetails.lastName,
-        ]
-          .filter(Boolean)
-          .join(" ");
-
-      case "emailAddress":
-        return (
-          registeredUserDetails.email ||
-          registeredUserDetails.emailId ||
-          ""
-        );
-
-      case "telephoneno":
-        return registeredUserDetails.contact || "";
-
-      default:
-        return undefined;
-    }
-  };
   /*
   |--------------------------------------------------------------------------
   | FIELD CHANGE
@@ -952,20 +1101,107 @@ const Details = ({
 
     setError("");
   };
-  const handleCancel = () => {
-    if (!currentSubCategory) return;
+  const handleCancel = async () => {
+    if (!currentSubCategory || !submissionId) return;
+
+    if (!token) {
+      setError("No stored token was found. Please sign in again.");
+      return;
+    }
 
     const subCategoryId = currentSubCategory.id;
 
-    // Clear only the currently selected subcategory's form values.
-    setFormValues((previous) => ({
-      ...previous,
-      [subCategoryId]: {},
-    }));
+    // Get all existing values for this subcategory.
+    const existingSubCategoryValues =
+      formValues[subCategoryId] || {};
 
-    // Clear validation errors and messages.
-    setFieldErrors({});
-    setError("");
+    // Explicitly clear every existing field, including dynamic fields.
+    const clearedSubCategoryValues: SubCategoryValues = {};
+
+    Object.keys(existingSubCategoryValues).forEach((fieldName) => {
+      const matchedField = fields.find(
+        (field) =>
+          fieldName === field.name ||
+          fieldName.startsWith(`${field.name}_`),
+      );
+
+      clearedSubCategoryValues[fieldName] =
+        matchedField?.type === "checkbox" ? false : "";
+    });
+
+    // Also include fields that may not yet have a value.
+    fields.forEach((field) => {
+      clearedSubCategoryValues[field.name] =
+        field.type === "checkbox" ? false : "";
+
+      // Clear dynamic technology variant fields.
+      if (technologyFieldNames.includes(field.name)) {
+        variants.forEach((variant) => {
+          const dynamicFieldName = `${field.name}_${variant.id}`;
+
+          clearedSubCategoryValues[dynamicFieldName] =
+            field.type === "checkbox" ? false : "";
+        });
+      }
+
+      // Clear dynamic weighment variant fields.
+      if (weighmentFieldNames.includes(field.name)) {
+        wdVariants.forEach((variant) => {
+          const dynamicFieldName = `${field.name}_${variant.id}`;
+
+          clearedSubCategoryValues[dynamicFieldName] =
+            field.type === "checkbox" ? false : "";
+        });
+      }
+    });
+
+    const updatedValues: SubmissionFormValues = {
+      ...formValues,
+      [subCategoryId]: clearedSubCategoryValues,
+    };
+
+    try {
+      setError("");
+
+      const response = await fetch(
+        `${API_URL}/bus/submissions/${encodeURIComponent(submissionId)}`,
+        {
+          method: "PATCH",
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+          },
+          body: JSON.stringify({
+            values: updatedValues,
+          }),
+        },
+      );
+
+      await readApiResponse<Submission>(
+        response,
+        "Failed to clear form data",
+      );
+
+      // Update frontend only after the backend confirms success.
+      setFormValues(updatedValues);
+      setFieldErrors({});
+      setError("");
+
+      // Refresh the parent component's saved progress.
+      await onSaved();
+
+    } catch (err) {
+      console.error("[Details] Error clearing subcategory:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to clear form data.",
+      );
+    }
   };
 
   /*
@@ -1406,7 +1642,7 @@ const Details = ({
         onMouseLeave={() => setSidebarCollapsed(false)}
       >
         {/* BLUE VEHICLE INFORMATION HEADER */}
-        <div className="flex min-h-[90px] shrink-0 flex-wrap items-center gap-8 bg-[#2875bd] px-8 py-5 text-white">
+        <div className="flex min-h-[90px] shrink-0 flex-wrap items-center gap-8 bg-[#205F8F] px-8 py-5 text-white">
           <div className="h-[70px] w-[70px] shrink-0 overflow-hidden rounded-full border-4 border-yellow-400 bg-white">
             <img
               src={
@@ -1528,7 +1764,7 @@ const Details = ({
               )}
 
               {/* FORM ACTIONS */}
-              <div className="mt-10 pt-6">
+              <div className="mt-6 w-full px-6 pb-6">
                 <FormActions
                   onCancel={handleCancel}
                   onSave={() => void handleSave()}

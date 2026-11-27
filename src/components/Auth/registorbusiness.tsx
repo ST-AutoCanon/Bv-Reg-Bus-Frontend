@@ -32,6 +32,21 @@ const Register: FC = () => {
     const [regSuccess, setRegSuccess] = React.useState<boolean>(false);
     const [emailIdAlreadyExist, setEmailIdAlreadyExist] = React.useState<boolean>(false);
 
+    const [vehicleImage, setVehicleImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState("");
+
+    useEffect(() => {
+        if (!vehicleImage) {
+            setImagePreview("");
+            return;
+        }
+
+        const previewUrl = URL.createObjectURL(vehicleImage);
+        setImagePreview(previewUrl);
+
+        return () => URL.revokeObjectURL(previewUrl);
+    }, [vehicleImage]);
+
     const { handleSubmit, register, formState: { errors, isSubmitting }, } = useForm()
 
 
@@ -41,22 +56,41 @@ const Register: FC = () => {
         }
     }
 
-    const userLogin = async (mergeData: {}) => {
-        await Post(apiURL, mergeData, config)
+    const userLogin = async (mergeData: any) => {
+        const uploadData = new FormData();
+
+        Object.entries(mergeData).forEach(([key, value]) => {
+            if (key === "profileAddress") {
+                uploadData.append(key, JSON.stringify(value));
+            } else {
+                uploadData.append(key, String(value ?? ""));
+            }
+        });
+
+        if (vehicleImage) {
+            uploadData.append("vehicleImage", vehicleImage);
+        }
+
+        const uploadConfig = {
+            headers: {
+                Authorization: "Bearer ",
+            },
+        };
+
+        await Post(apiURL, uploadData, uploadConfig)
             .then((resp) => {
-                if (resp.data.status === 'success') {
+                if (resp.data.status === "success") {
                     setRegSuccess(true);
-                    setEmailIdAlreadyExist(false)
+                    setEmailIdAlreadyExist(false);
                 }
-                if (resp.data.status === 'failure') {
-                    // console.log(resp.data.body.split('key: '));   
-                    setEmailIdAlreadyExist(true)
-                    let resetButton = document.getElementById('emailId');
-                    resetButton?.focus()
+
+                if (resp.data.status === "failure") {
+                    setEmailIdAlreadyExist(true);
+                    document.getElementById("emailId")?.focus();
                 }
             })
             .catch((error) => {
-                // console.log('error');
+                console.error("Registration error:", error);
             });
     };
 
@@ -173,11 +207,11 @@ const Register: FC = () => {
                                 <Flex gap="8" mt={"30px"} flexWrap={['wrap', 'wrap', 'nowrap']}>
                                     <FormControl >
                                         <FormLabel fontWeight={"700"} fontSize={"14px"}>Type of Business <Text as={'span'} className='requiredField'>*</Text></FormLabel>
-                                        <Select  bg={"#fff"} border={"1px solid #D9D9D9"}
+                                        <Select bg={"#fff"} border={"1px solid #D9D9D9"}
                                             {...register('typeOfBusiness')
                                             }
 
-                                        >   
+                                        >
                                             <option value="Company">Company</option>
 
                                             <option value="Corporation">Corporation</option>
@@ -388,7 +422,7 @@ const Register: FC = () => {
                                 <Flex gap="8" mt="30px" flexWrap={['wrap', 'wrap', 'nowrap']}>
                                     <FormControl flex="1">
                                         <FormLabel fontWeight="700" fontSize="14px">
-                                        vehicle Type <Text as="span" className="requiredField">*</Text>
+                                            vehicle Type <Text as="span" className="requiredField">*</Text>
                                         </FormLabel>
                                         <Select
                                             placeholder="Select vehicle Type"
@@ -401,8 +435,8 @@ const Register: FC = () => {
                                             <option value="2-Wheeler">2-Wheeler</option>
                                             <option value="3-Wheeler">3-Wheeler</option>
                                             <option value="Bus">BUS</option>
-                                            
-                                        </Select>                                      
+
+                                        </Select>
                                         <FormHelperText color="red">
                                             <>
                                                 {errors.vehicleType && errors.vehicleType.message}
@@ -420,6 +454,73 @@ const Register: FC = () => {
                                             bg="#fff"
                                             border="1px solid #D9D9D9"
                                         />
+                                    </FormControl>
+                                </Flex>
+                                <Flex gap="8" mt="30px" flexWrap="wrap">
+                                    <FormControl>
+                                        <FormLabel fontWeight="700" fontSize="14px">
+                                            Upload Vehicle Image
+                                        </FormLabel>
+
+                                        <Input
+                                            type="file"
+                                            accept="image/*"
+                                            bg="#fff"
+                                            border="1px solid #D9D9D9"
+                                            p={1}
+                                            onChange={(event) => {
+                                                const file = event.target.files?.[0];
+
+                                                if (!file) {
+                                                    setVehicleImage(null);
+                                                    return;
+                                                }
+
+                                                if (!file.type.startsWith("image/")) {
+                                                    alert("Please select an image file.");
+                                                    event.target.value = "";
+                                                    setVehicleImage(null);
+                                                    return;
+                                                }
+
+                                                if (file.size > 5 * 1024 * 1024) {
+                                                    alert("Image size should not exceed 5 MB.");
+                                                    event.target.value = "";
+                                                    setVehicleImage(null);
+                                                    return;
+                                                }
+
+                                                setVehicleImage(file);
+                                            }}
+                                        />
+
+                                        <FormHelperText>
+                                            Upload an image of your vehicle (maximum 5 MB).
+                                        </FormHelperText>
+
+                                        {imagePreview && (
+                                            <Flex mt="3" align="center" gap="4">
+                                                <img
+                                                    src={imagePreview}
+                                                    alt="Vehicle preview"
+                                                    style={{
+                                                        width: "120px",
+                                                        height: "100px",
+                                                        objectFit: "cover",
+                                                        borderRadius: "8px",
+                                                    }}
+                                                />
+
+                                                <Button
+                                                    size="sm"
+                                                    colorScheme="red"
+                                                    variant="outline"
+                                                    onClick={() => setVehicleImage(null)}
+                                                >
+                                                    Remove Image
+                                                </Button>
+                                            </Flex>
+                                        )}
                                     </FormControl>
                                 </Flex>
                                 <Flex gap="8" m={"40px 0px"} flexWrap={['wrap', 'wrap', 'nowrap']}>

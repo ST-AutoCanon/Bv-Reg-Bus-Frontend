@@ -74,8 +74,8 @@ const Sidebar = ({
       className={`
     flex h-full min-h-0 shrink-0 flex-col
     overflow-x-hidden overflow-y-auto
-    bg-[#174B70]
-    border-r border-white/10
+    bg-[#263B3D]
+border-r border-[#D5E1DC]
     transition-all duration-300 ease-in-out
     ${collapsed ? "w-[76px]" : "w-[300px]"}
   `}
@@ -96,9 +96,9 @@ const Sidebar = ({
   py-3 text-left text-sm font-medium
   transition-colors duration-200
  ${isSelected
-                  ? "bg-[#205F8F] text-white"
-                  : "bg-transparent text-white hover:bg-[#23658F]"
-                }
+  ? "bg-[#205F8F] text-white"
+  : "bg-transparent text-white hover:bg-[#23658F]"
+}
 `}
             >
               <Icon

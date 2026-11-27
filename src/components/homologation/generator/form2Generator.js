@@ -230,18 +230,21 @@ const createCell = (
   } = {}
 ) => `
   <w:tc>
-    <w:tcPr>
-      <w:tcW w:w="${width}" w:type="dxa"/>
-      ${gridSpan > 1 ? `<w:gridSpan w:val="${gridSpan}"/>` : ""}
-      <w:vAlign w:val="center"/>
+    
+<w:tcPr>
+  <w:tcW w:w="${width}" w:type="dxa"/>
+  ${gridSpan > 1 ? `<w:gridSpan w:val="${gridSpan}"/>` : ""}
 
-      <w:tcMar>
-        <w:top w:w="20" w:type="dxa"/>
-<w:bottom w:w="20" w:type="dxa"/>
-        <w:left w:w="90" w:type="dxa"/>
-        <w:right w:w="90" w:type="dxa"/>
-      </w:tcMar>
-    </w:tcPr>
+  <w:tcMar>
+  <w:top w:w="40" w:type="dxa"/>
+  <w:bottom w:w="40" w:type="dxa"/>
+  <w:left w:w="100" w:type="dxa"/>
+  <w:right w:w="60" w:type="dxa"/>
+</w:tcMar>
+
+  <w:vAlign w:val="center"/>
+</w:tcPr>
+
 
     <w:p>
       <w:pPr>
@@ -283,15 +286,15 @@ const createSubheadingRow = (
   <w:tr>
     <w:tc>
       <w:tcPr>
-        <w:tcW w:w="${totalWidth}" w:type="dxa"/>
-        <w:gridSpan w:val="${columnCount}"/>
-        <w:vAlign w:val="center"/>
-        <w:tcBorders>
-          <w:top w:val="single" w:sz="6" w:color="000000"/>
-          <w:left w:val="single" w:sz="6" w:color="000000"/>
-          <w:bottom w:val="single" w:sz="6" w:color="000000"/>
-          <w:right w:val="single" w:sz="6" w:color="000000"/>
-        </w:tcBorders>
+       <w:tcW w:w="${totalWidth}" w:type="dxa"/>
+<w:gridSpan w:val="${columnCount}"/>
+<w:tcBorders>
+  <w:top w:val="single" w:sz="6" w:color="000000"/>
+  <w:left w:val="single" w:sz="6" w:color="000000"/>
+  <w:bottom w:val="single" w:sz="6" w:color="000000"/>
+  <w:right w:val="single" w:sz="6" w:color="000000"/>
+</w:tcBorders>
+<w:vAlign w:val="center"/>
       </w:tcPr>
 
       <w:p>
@@ -325,13 +328,14 @@ const createTechnicalHeadingRow = (
       <w:tcPr>
         <w:tcW w:w="${totalWidth}" w:type="dxa"/>
         <w:gridSpan w:val="${columnCount}"/>
-        <w:vAlign w:val="center"/>
         <w:tcBorders>
           <w:top w:val="single" w:sz="6" w:color="000000"/>
           <w:left w:val="single" w:sz="6" w:color="000000"/>
           <w:bottom w:val="single" w:sz="6" w:color="000000"/>
           <w:right w:val="single" w:sz="6" w:color="000000"/>
         </w:tcBorders>
+        <w:vAlign w:val="center"/>
+        
       </w:tcPr>
 
       <w:p>
@@ -412,6 +416,7 @@ const createTable = (
     subheading = "",
     showHeader = true,
     includeTechnicalHeading = false,
+     tableIndent = 0,
   } = {}
 ) => {
   if (!Array.isArray(rows) || rows.length === 0) {
@@ -501,19 +506,23 @@ const bodyRows = rows
 
   return `
     <w:tbl>
-      <w:tblPr>
+      
+<w:tblPr>
   <w:tblW w:w="9600" w:type="dxa"/>
-  <w:jc w:val="center"/>
+<w:jc w:val="center"/>
+<w:tblInd w:w="${tableIndent}" w:type="dxa"/>
+
+  <w:tblBorders>
+    <w:top w:val="single" w:sz="6" w:color="000000"/>
+    <w:left w:val="single" w:sz="6" w:color="000000"/>
+    <w:bottom w:val="single" w:sz="6" w:color="000000"/>
+    <w:right w:val="single" w:sz="6" w:color="000000"/>
+    <w:insideH w:val="single" w:sz="4" w:color="000000"/>
+    <w:insideV w:val="single" w:sz="4" w:color="000000"/>
+  </w:tblBorders>
   <w:tblLayout w:type="fixed"/>
-        <w:tblBorders>
-          <w:top w:val="single" w:sz="6" w:color="000000"/>
-          <w:left w:val="single" w:sz="6" w:color="000000"/>
-          <w:bottom w:val="single" w:sz="6" w:color="000000"/>
-          <w:right w:val="single" w:sz="6" w:color="000000"/>
-          <w:insideH w:val="single" w:sz="4" w:color="000000"/>
-          <w:insideV w:val="single" w:sz="4" w:color="000000"/>
-        </w:tblBorders>
-      </w:tblPr>
+</w:tblPr>
+
 
       <w:tblGrid>
         ${grid}
@@ -541,21 +550,22 @@ const createFooterCell = (
 
   return `
     <w:tc>
-      <w:tcPr>
-        <w:tcW w:w="${width}" w:type="dxa"/>
-        <w:vAlign w:val="center"/>
+     <w:tcPr>
+  <w:tcW w:w="${width}" w:type="dxa"/>
 
-        <w:tcMar>
-          <w:top w:w="40" w:type="dxa"/>
-           <w:bottom w:w="40" w:type="dxa"/>
-          <w:left w:w="100" w:type="dxa"/>
-          <w:right w:w="60" w:type="dxa"/>
-        </w:tcMar>
+  <w:tcBorders>
+    <w:bottom w:val="single" w:sz="6" w:color="FF8080"/>
+  </w:tcBorders>
 
-        <w:tcBorders>
-          <w:bottom w:val="single" w:sz="6" w:color="FF8080"/>
-        </w:tcBorders>
-      </w:tcPr>
+ <w:tcMar>
+  <w:top w:w="40" w:type="dxa"/>
+  <w:bottom w:w="40" w:type="dxa"/>
+  <w:left w:w="100" w:type="dxa"/>
+  <w:right w:w="60" w:type="dxa"/>
+</w:tcMar>
+
+  <w:vAlign w:val="center"/>
+</w:tcPr>
 
       ${lines.map((line) => `
         <w:p>
@@ -590,7 +600,7 @@ const createFooterRow = (values, options = {}) => `
       .map((value, index) =>
         createFooterCell(value, {
           width: options.widths?.[index] || 3200,
-          align: options.alignments?.[index] || "Center",
+          align: options.alignments?.[index] || "center",
           bold: options.bold?.[index] ?? true,
         })
       )
@@ -610,21 +620,22 @@ const createFooterSection = () => `
   </w:p>
 
   <w:tbl>
-    <w:tblPr>
+   <w:tblPr>
   <w:tblW w:w="9600" w:type="dxa"/>
   <w:jc w:val="center"/>
   <w:tblInd w:w="0" w:type="dxa"/>
-  <w:tblLayout w:type="fixed"/>
 
-      <w:tblBorders>
-        <w:top w:val="single" w:sz="6" w:color="FF8080"/>
-        <w:left w:val="single" w:sz="6" w:color="FF8080"/>
-        <w:bottom w:val="single" w:sz="6" w:color="FF8080"/>
-        <w:right w:val="single" w:sz="6" w:color="FF8080"/>
-        <w:insideV w:val="single" w:sz="6" w:color="FF8080"/>
-        <w:insideH w:val="single" w:sz="6" w:color="FF8080"/>
-      </w:tblBorders>
-    </w:tblPr>
+  <w:tblBorders>
+    <w:top w:val="single" w:sz="6" w:color="FF8080"/>
+    <w:left w:val="single" w:sz="6" w:color="FF8080"/>
+    <w:bottom w:val="single" w:sz="6" w:color="FF8080"/>
+    <w:right w:val="single" w:sz="6" w:color="FF8080"/>
+    <w:insideV w:val="single" w:sz="6" w:color="FF8080"/>
+    <w:insideH w:val="single" w:sz="6" w:color="FF8080"/>
+  </w:tblBorders>
+
+  <w:tblLayout w:type="fixed"/>
+</w:tblPr>
 
     <w:tblGrid>
       <w:gridCol w:w="3200"/>
@@ -986,7 +997,7 @@ console.log("Vehicle Class extracted:", vehicleClassRow);
     [
       "Clause No.",
       "Description",
-      "Value",
+      "",
     ],
     buildNormalTableRows(firstPageRows),
      {
@@ -1013,7 +1024,7 @@ if (secondPageRows.length) {
     [
       "Clause No.",
       "Description",
-      "Value",
+      "",
     ],
     buildNormalTableRows(secondPageRows),
     {
@@ -1063,7 +1074,10 @@ if (matrixItems.length) {
       "Variant 1",
       "Variant 2",
     ],
-    matrixRows
+    matrixRows,
+     {
+    tableIndent: 90,
+  }
   );
 }
 // 9. DISPLAY A3.4 VEHICLE CLASS AFTER THE REGENERATIVE MATRIX
@@ -1079,6 +1093,7 @@ if (vehicleClassRow) {
     {
       showHeader: false,
       includeTechnicalHeading: false,
+      tableIndent: 90,
     }
   );
 } else {
